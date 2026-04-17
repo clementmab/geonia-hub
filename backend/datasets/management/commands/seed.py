@@ -8,6 +8,25 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
 
+        # ✅ Crée un superuser s'il n'existe pas
+        self.stdout.write('Vérification/création du superutilisateur...')
+        admin, created = User.objects.get_or_create(
+            username='admin',
+            defaults={
+                'email': 'admin@geonia-hub.com',
+                'is_staff': True,
+                'is_superuser': True,
+            }
+        )
+        if created:
+            admin.set_password('admin')
+            admin.save()
+            self.stdout.write(
+                self.style.SUCCESS('✓ Superutilisateur créé : admin / admin')
+            )
+        else:
+            self.stdout.write('✓ Superutilisateur existant utilisé')
+
         self.stdout.write('Création des catégories...')
         categories = {
             'routes':       Category.objects.get_or_create(
