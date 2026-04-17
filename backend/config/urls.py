@@ -16,6 +16,7 @@ urlpatterns = [
     path('', lambda request: HttpResponse('API Geonia Hub active. Accédez à /admin/ ou /api/.'), name='home'),
     path('admin/',            admin.site.urls),
     path('api/',              include(router.urls)),
+    path('api/auth/',         include('users.urls')),
     path('api/auth/login/',   TokenObtainPairView.as_view(), name='token_obtain'),
     path('api/auth/refresh/', TokenRefreshView.as_view(),    name='token_refresh'),
 

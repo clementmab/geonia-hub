@@ -47,12 +47,12 @@ class DatasetDetailSerializer(serializers.ModelSerializer):
 
 
 class DatasetCreateSerializer(serializers.ModelSerializer):
-    """Pour la soumission d'un nouveau dataset (anonyme ou connecté)"""
+    """Pour la soumission d'un nouveau dataset (utilisateur connecté requis)"""
 
     class Meta:
         model  = Dataset
         fields = [
-            'title', 'description', 'category', 'department',
+            'title', 'dataset_type', 'description', 'category', 'department',
             'format', 'projection', 'licence', 'file_url', 'file_size_mb',
         ]
 

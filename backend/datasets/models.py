@@ -46,8 +46,17 @@ class Dataset(models.Model):
         ('mit',     'MIT'),
     ]
 
+    DATASET_TYPE_CHOICES = [
+        ('pre_produced', 'Carte pré-produite'),
+        ('new', 'Nouveau dataset'),
+    ]
+
     # Infos principales
     title       = models.CharField(max_length=200, verbose_name="Titre")
+    dataset_type = models.CharField(
+        max_length=20, choices=DATASET_TYPE_CHOICES,
+        default='new', verbose_name="Type de dataset"
+    )
     description = models.TextField(verbose_name="Description")
     category    = models.ForeignKey(
         Category, on_delete=models.SET_NULL,

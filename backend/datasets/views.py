@@ -33,12 +33,12 @@ class DatasetViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """
-        create  → tout le monde (soumission anonyme)
+        create  → utilisateurs connectés seulement
         approve / destroy / update / partial_update → admin seulement
         list / retrieve → lecture libre
         """
         if self.action == 'create':
-            return [AllowAny()]
+            return [IsAuthenticated()]
         if self.action in ('approve', 'destroy', 'update', 'partial_update'):
             return [IsAdminUser()]
         return [AllowAny()]   # list, retrieve, download
@@ -57,8 +57,8 @@ class DatasetViewSet(viewsets.ModelViewSet):
         return DatasetDetailSerializer
 
     def perform_create(self, serializer):
-        # Statut forcé à 'pending' à la création, indépendamment du serializer
-        serializer.save(status='pending')
+        # Statut forcé à 'pending' à la création, contributeur = user connecté
+        serializer.save(status='pending', contributor=self.request.user)
 
     @action(detail=True, methods=['post'], permission_classes=[AllowAny])
     def download(self, request, pk=None):
