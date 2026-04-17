@@ -1,11 +1,13 @@
 from pathlib import Path
-from decouple import config
+import os
+from decouple import config, Csv
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-production')
 DEBUG = config('DEBUG', default=True, cast=bool)
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -58,10 +60,9 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # ── Base de données (SQLite pour développement local) ──────────────────────
 # On utilise SQLite d'abord — on passera à PostgreSQL pour la production
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}'
+    )
 }
 
 # ── REST Framework ──────────────────────────────────────────────────────────
@@ -82,10 +83,7 @@ REST_FRAMEWORK = {
 }
 
 # ── CORS (autorise le frontend React en développement) ─────────────────────
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-]
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://127.0.0.1:3000', cast=Csv())
 CORS_ALLOW_CREDENTIALS = True
 
 # ── Fichiers statiques et médias ────────────────────────────────────────────
