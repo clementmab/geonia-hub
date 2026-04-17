@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from datasets.views import DatasetViewSet, CategoryViewSet, DepartmentViewSet
@@ -13,9 +13,7 @@ router.register('categories',  CategoryViewSet,   basename='category')
 router.register('departments', DepartmentViewSet, basename='department')
 
 urlpatterns = [
-    # Redirection racine → frontend React
-    path('', lambda request: HttpResponseRedirect('http://localhost:3000')),
-
+    path('', lambda request: HttpResponse('API Geonia Hub active. Accédez à /admin/ ou /api/.'), name='home'),
     path('admin/',            admin.site.urls),
     path('api/',              include(router.urls)),
     path('api/auth/login/',   TokenObtainPairView.as_view(), name='token_obtain'),

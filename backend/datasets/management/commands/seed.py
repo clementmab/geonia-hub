@@ -20,15 +20,16 @@ class Command(BaseCommand):
         )
         admin.is_staff = True
         admin.is_superuser = True
-        admin.set_password('Congo 242')
+        admin.set_password('Congos_25-01')
         admin.save()
+        print(f"DEBUG: Superuser '{admin.username}' created/updated with password 'Congos_25-01'")
         if created:
             self.stdout.write(
-                self.style.SUCCESS('✓ Superutilisateur créé : clement / Congo 242')
+                self.style.SUCCESS('✓ Superutilisateur créé : clement / Congos_25-01')
             )
         else:
             self.stdout.write(self.style.WARNING(
-                '✓ Superutilisateur existant réinitialisé au mot de passe connu : Congo 242'
+                '✓ Superutilisateur existant réinitialisé au mot de passe connu : Congos_25-01'
             ))
 
         self.stdout.write('Création des catégories...')
