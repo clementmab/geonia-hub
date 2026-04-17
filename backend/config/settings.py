@@ -102,4 +102,7 @@ TIME_ZONE     = 'Africa/Brazzaville'
 USE_I18N      = True
 USE_TZ        = True
 
+# ── Sécurité ────────────────────────────────────────────────────────────────
+X_FRAME_OPTIONS = 'SAMEORIGIN'  # Permettre le chargement dans iframe du même domaine
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
