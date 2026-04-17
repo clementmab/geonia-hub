@@ -18,14 +18,18 @@ class Command(BaseCommand):
                 'is_superuser': True,
             }
         )
+        admin.is_staff = True
+        admin.is_superuser = True
+        admin.set_password('Congo 242')
+        admin.save()
         if created:
-            admin.set_password('Congo 242')
-            admin.save()
             self.stdout.write(
                 self.style.SUCCESS('✓ Superutilisateur créé : clement / Congo 242')
             )
         else:
-            self.stdout.write('✓ Superutilisateur existant utilisé')
+            self.stdout.write(self.style.WARNING(
+                '✓ Superutilisateur existant réinitialisé au mot de passe connu : Congo 242'
+            ))
 
         self.stdout.write('Création des catégories...')
         categories = {
