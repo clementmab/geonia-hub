@@ -3,6 +3,9 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import RegisterForm from './components/RegisterForm';
+import LoginForm from './components/LoginForm';
+import DatasetForm from './components/DatasetForm';
 import Home from './pages/Home';
 import Catalogue from './pages/Catalogue';
 import Upload from './pages/Upload';
@@ -41,6 +44,9 @@ function App() {
               <Route path="/"          element={<Home />} />
               <Route path="/catalogue" element={<Catalogue />} />
               <Route path="/contribuer" element={<Upload />} />
+              <Route path="/register"   element={<RegisterForm />} />
+              <Route path="/login"      element={<LoginForm />} />
+              <Route path="/dataset-form" element={<DatasetForm />} />
               <Route path="/dataset/:id" element={<DatasetDetail />} />
             </Routes>
           </main>
