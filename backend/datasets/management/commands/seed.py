@@ -23,7 +23,14 @@ class Command(BaseCommand):
         admin.set_password('Congos_25-01')
         admin.save()
         print(f"DEBUG: Superuser '{admin.username}' created/updated with password 'Congos_25-01'")
-        if created:
+
+        # Assurer que le profil existe (pour les utilisateurs existants sans profil)
+        profile, profile_created = UserProfile.objects.get_or_create(
+            user=admin,
+            defaults={'user_type': 'contributeur'}
+        )
+
+        if created or profile_created:
             self.stdout.write(
                 self.style.SUCCESS('✓ Superutilisateur créé : clement / Congos_25-01')
             )
