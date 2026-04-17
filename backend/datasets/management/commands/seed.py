@@ -11,7 +11,7 @@ class Command(BaseCommand):
         # ✅ Crée un superuser s'il n'existe pas
         self.stdout.write('Vérification/création du superutilisateur...')
         admin, created = User.objects.get_or_create(
-            username='admin',
+            username='clement',
             defaults={
                 'email': 'admin@geonia-hub.com',
                 'is_staff': True,
@@ -19,10 +19,10 @@ class Command(BaseCommand):
             }
         )
         if created:
-            admin.set_password('admin')
+            admin.set_password('Congo 242')
             admin.save()
             self.stdout.write(
-                self.style.SUCCESS('✓ Superutilisateur créé : admin / admin')
+                self.style.SUCCESS('✓ Superutilisateur créé : clement / Congo 242')
             )
         else:
             self.stdout.write('✓ Superutilisateur existant utilisé')
