@@ -31,9 +31,10 @@ const LoginForm = () => {
 
       const profile = await getProfile();
       console.log('Profile data:', profile);
+      const userInfo = profile?.user ?? profile;
 
-      if (profile && profile.user) {
-        localStorage.setItem('user', JSON.stringify(profile.user));
+      if (userInfo) {
+        localStorage.setItem('user', JSON.stringify(userInfo));
         setSuccessMessage('✓ Connexion réussie ! Redirection en cours...');
         // Notifier le Navbar du changement d'authentification
         window.dispatchEvent(new Event('authChange'));

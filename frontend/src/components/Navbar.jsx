@@ -59,24 +59,30 @@ export default function Navbar() {
 
   const loadUser = () => {
     const token = localStorage.getItem('access_token');
-    const userData = localStorage.getItem('user');
-    if (token && userData) {
+    let userData = localStorage.getItem('user');
+
+    if (token && userData && userData !== 'undefined') {
       try {
         setUser(JSON.parse(userData));
+        return;
       } catch (e) {
-        setUser(null);
+        console.error('Error parsing user data:', e);
       }
-    } else {
-      setUser(null);
     }
+
+    // Nettoyer les données invalides si nécessaire
+    localStorage.removeItem('user');
+    setUser(null);
   };
 
   const fetchUserProfile = async () => {
     try {
       const profile = await getProfile();
-      if (profile && profile.user) {
-        localStorage.setItem('user', JSON.stringify(profile.user));
-        setUser(profile.user);
+      const userInfo = profile?.user ?? profile;
+
+      if (userInfo) {
+        localStorage.setItem('user', JSON.stringify(userInfo));
+        setUser(userInfo);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);

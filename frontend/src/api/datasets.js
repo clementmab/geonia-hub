@@ -46,6 +46,9 @@ export const downloadDataset = (id) =>
 export const login = (username, password) =>
   client.post('/auth/login/', { username, password }).then((r) => {
     localStorage.setItem('access_token', r.data.access);
+    if (r.data.refresh) {
+      localStorage.setItem('refresh_token', r.data.refresh);
+    }
     return r.data;
   });
 
