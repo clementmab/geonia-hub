@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from datasets.models import Category, Department, Dataset
+from users.models import UserProfile
 
 
 class Command(BaseCommand):
