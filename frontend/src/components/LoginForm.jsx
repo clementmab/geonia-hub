@@ -30,6 +30,8 @@ const LoginForm = () => {
       const profile = await getProfile();
       localStorage.setItem('user', JSON.stringify(profile.user));
       setSuccessMessage('✓ Connexion réussie ! Redirection en cours...');
+      // Notifier le Navbar du changement d'authentification
+      window.dispatchEvent(new Event('authChange'));
       setTimeout(() => navigate('/catalogue'), 1500);
     } catch (error) {
       if (error.response && error.response.data) {

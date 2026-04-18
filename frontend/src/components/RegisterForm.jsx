@@ -33,6 +33,8 @@ const RegisterForm = () => {
     try {
       await register(formData);
       setSuccessMessage('✓ Inscription réussie ! Redirection en cours...');
+      // Notifier le Navbar du changement d'authentification
+      window.dispatchEvent(new Event('authChange'));
       setTimeout(() => navigate('/catalogue'), 1500);
     } catch (error) {
       if (error.response && error.response.data) {

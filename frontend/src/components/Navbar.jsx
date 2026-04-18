@@ -17,8 +17,18 @@ export default function Navbar() {
       loadUser();
     };
 
+    // Écouter les événements personnalisés de connexion/déconnexion
+    const handleAuthChange = () => {
+      loadUser();
+    };
+
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('authChange', handleAuthChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('authChange', handleAuthChange);
+    };
   }, []);
 
   const loadUser = () => {
@@ -40,6 +50,8 @@ export default function Navbar() {
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
     setUser(null);
+    // Notifier les autres composants du changement d'authentification
+    window.dispatchEvent(new Event('authChange'));
     navigate('/');
   };
 
@@ -76,7 +88,7 @@ export default function Navbar() {
           <>
             <Link to="/contribuer" style={linkStyle('/contribuer')}>Contribuer</Link>
             <span style={{ color: '#9FE1CB', fontSize: '14px', margin: '0 10px' }}>
-              Bonjour, {user.username}
+              Bienvenue, {user.first_name || user.username}
             </span>
             <button
               onClick={handleLogout}
