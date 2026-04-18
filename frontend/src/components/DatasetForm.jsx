@@ -61,8 +61,9 @@ const DatasetForm = () => {
 
     const token = localStorage.getItem('access_token');
     if (!token) {
-      alert('Vous devez être connecté pour soumettre un dataset.');
-      navigate('/login');
+      setErrors({ general: 'Vous devez être connecté pour soumettre un dataset.' });
+      setLoading(false);
+      setTimeout(() => navigate('/login'), 1500);
       return;
     }
 
@@ -71,8 +72,13 @@ const DatasetForm = () => {
       setSuccessMessage('✓ Dataset soumis avec succès ! Il sera examiné par un administrateur.');
       setTimeout(() => navigate('/catalogue'), 2000);
     } catch (error) {
+      console.error('Dataset submission error:', error);
       if (error.response && error.response.data) {
         setErrors(error.response.data);
+      } else if (error.response?.status === 401) {
+        setErrors({ general: 'Erreur d\'authentification. Veuillez vous reconnecter.' });
+      } else if (error.response?.status === 400) {
+        setErrors({ general: 'Erreur de validation des données. Vérifiez tous les champs.' });
       } else {
         setErrors({ general: 'Erreur lors de la soumission. Veuillez réessayer.' });
       }
