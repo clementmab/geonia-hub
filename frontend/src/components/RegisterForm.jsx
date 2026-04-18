@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { register } from '../api/datasets';
 import './RegisterForm.css';
 
 const RegisterForm = () => {
@@ -29,29 +30,15 @@ const RegisterForm = () => {
     setErrors({});
 
     try {
-      const response = await fetch('/api/auth/register/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Stocker les tokens
-        localStorage.setItem('access_token', data.tokens.access);
-        localStorage.setItem('refresh_token', data.tokens.refresh);
-        localStorage.setItem('user', JSON.stringify(data.user));
-
-        alert('Inscription réussie ! Bienvenue sur Geonia Hub.');
-        navigate('/catalogue');
-      } else {
-        setErrors(data);
-      }
+      await register(formData);
+      alert('Inscription réussie ! Bienvenue sur Geonia Hub.');
+      navigate('/catalogue');
     } catch (error) {
-      setErrors({ general: 'Erreur de connexion. Veuillez réessayer.' });
+      if (error.response && error.response.data) {
+        setErrors(error.response.data);
+      } else {
+        setErrors({ general: 'Erreur de connexion. Veuillez réessayer.' });
+      }
     } finally {
       setLoading(false);
     }

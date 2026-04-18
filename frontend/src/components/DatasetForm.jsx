@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getCategories, getDepartments, submitDataset } from '../api/datasets';
 import './DatasetForm.css';
 
 const DatasetForm = () => {
@@ -28,8 +29,7 @@ const DatasetForm = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/categories/');
-      const data = await response.json();
+      const data = await getCategories();
       setCategories(data);
     } catch (error) {
       console.error('Erreur chargement catégories:', error);
@@ -38,8 +38,7 @@ const DatasetForm = () => {
 
   const fetchDepartments = async () => {
     try {
-      const response = await fetch('/api/departments/');
-      const data = await response.json();
+      const data = await getDepartments();
       setDepartments(data);
     } catch (error) {
       console.error('Erreur chargement départements:', error);
@@ -67,25 +66,15 @@ const DatasetForm = () => {
     }
 
     try {
-      const response = await fetch('/api/datasets/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert('Dataset soumis avec succès ! Il sera examiné par un administrateur.');
-        navigate('/catalogue');
-      } else {
-        setErrors(data);
-      }
+      await submitDataset(formData);
+      alert('Dataset soumis avec succès ! Il sera examiné par un administrateur.');
+      navigate('/catalogue');
     } catch (error) {
-      setErrors({ general: 'Erreur de connexion. Veuillez réessayer.' });
+      if (error.response && error.response.data) {
+        setErrors(error.response.data);
+      } else {
+        setErrors({ general: 'Erreur de connexion. Veuillez réessayer.' });
+      }
     } finally {
       setLoading(false);
     }

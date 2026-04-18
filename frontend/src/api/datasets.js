@@ -49,4 +49,15 @@ export const login = (username, password) =>
     return r.data;
   });
 
+export const register = (userData) =>
+  client.post('/auth/register/', userData).then((r) => {
+    localStorage.setItem('access_token', r.data.tokens.access);
+    localStorage.setItem('refresh_token', r.data.tokens.refresh);
+    localStorage.setItem('user', JSON.stringify(r.data.user));
+    return r.data;
+  });
+
+export const getProfile = () =>
+  client.get('/auth/profile/').then((r) => r.data);
+
 

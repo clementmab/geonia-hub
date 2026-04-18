@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { login, getProfile } from '../api/datasets';
 import './LoginForm.css';
 
 const LoginForm = () => {
@@ -24,39 +25,20 @@ const LoginForm = () => {
     setErrors({});
 
     try {
-      const response = await fetch('/api/auth/login/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Stocker les tokens
-        localStorage.setItem('access_token', data.access);
-        localStorage.setItem('refresh_token', data.refresh);
-
-        // Récupérer les infos utilisateur
-        const userResponse = await fetch('/api/auth/profile/', {
-          headers: {
-            'Authorization': `Bearer ${data.access}`
-          }
-        });
-        const userData = await userResponse.json();
-        localStorage.setItem('user', JSON.stringify(userData.user));
-
-        alert('Connexion réussie !');
-        navigate('/catalogue');
-      } else {
-        setErrors(data);
-      }
+      const data = await login(formData.username, formData.password);
+      const profile = await getProfile();
+      localStorage.setItem('user', JSON.stringify(profile.user));
+      alert('Connexion réussie !');
+      navigate('/catalogue');
     } catch (error) {
-      setErrors({ general: 'Erreur de connexion. Veuillez réessayer.' });
+      if (error.response && error.response.data) {
+        setErrors(error.response.data);
+      } else {
+        setErrors({ general: 'Erreur de connexion. Veuillez réessayer.' });
+      }
     } finally {
       setLoading(false);
+    }
     }
   };
 
