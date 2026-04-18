@@ -26,14 +26,24 @@ const LoginForm = () => {
     setErrors({});
 
     try {
-      await login(formData.username, formData.password);
+      const loginData = await login(formData.username, formData.password);
+      console.log('Login successful:', loginData);
+
       const profile = await getProfile();
-      localStorage.setItem('user', JSON.stringify(profile.user));
-      setSuccessMessage('✓ Connexion réussie ! Redirection en cours...');
-      // Notifier le Navbar du changement d'authentification
-      window.dispatchEvent(new Event('authChange'));
-      setTimeout(() => navigate('/catalogue'), 1500);
+      console.log('Profile data:', profile);
+
+      if (profile && profile.user) {
+        localStorage.setItem('user', JSON.stringify(profile.user));
+        setSuccessMessage('✓ Connexion réussie ! Redirection en cours...');
+        // Notifier le Navbar du changement d'authentification
+        window.dispatchEvent(new Event('authChange'));
+        setTimeout(() => navigate('/catalogue'), 1500);
+      } else {
+        console.error('Profile data invalid:', profile);
+        setErrors({ general: 'Erreur lors de la récupération du profil utilisateur.' });
+      }
     } catch (error) {
+      console.error('Login error:', error);
       if (error.response && error.response.data) {
         setErrors(error.response.data);
       } else {
