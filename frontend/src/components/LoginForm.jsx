@@ -25,7 +25,7 @@ const LoginForm = () => {
     setErrors({});
 
     try {
-      const data = await login(formData.username, formData.password);
+      await login(formData.username, formData.password);
       const profile = await getProfile();
       localStorage.setItem('user', JSON.stringify(profile.user));
       alert('Connexion réussie !');
