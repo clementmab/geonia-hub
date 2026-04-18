@@ -15,6 +15,7 @@ const RegisterForm = () => {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -31,8 +32,8 @@ const RegisterForm = () => {
 
     try {
       await register(formData);
-      alert('Inscription réussie ! Bienvenue sur Geonia Hub.');
-      navigate('/catalogue');
+      setSuccessMessage('✓ Inscription réussie ! Redirection en cours...');
+      setTimeout(() => navigate('/catalogue'), 1500);
     } catch (error) {
       if (error.response && error.response.data) {
         setErrors(error.response.data);
@@ -49,6 +50,20 @@ const RegisterForm = () => {
       <div className="register-form">
         <h2>Créer un compte Geonia Hub</h2>
         <p>Rejoignez notre communauté de contributeurs géographiques</p>
+
+        {successMessage && (
+          <div style={{
+            padding: '12px 16px',
+            marginBottom: '16px',
+            background: '#d4edda',
+            color: '#155724',
+            borderRadius: '6px',
+            border: '1px solid #c3e6cb',
+            fontSize: '14px'
+          }}>
+            {successMessage}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-row">

@@ -9,12 +9,31 @@ export default function Navbar() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
+    // Vérifier l'utilisateur au chargement
+    loadUser();
+
+    // Écouter les changements de localStorage
+    const handleStorageChange = () => {
+      loadUser();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const loadUser = () => {
     const token = localStorage.getItem('access_token');
     const userData = localStorage.getItem('user');
     if (token && userData) {
-      setUser(JSON.parse(userData));
+      try {
+        setUser(JSON.parse(userData));
+      } catch (e) {
+        setUser(null);
+      }
+    } else {
+      setUser(null);
     }
-  }, []);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');

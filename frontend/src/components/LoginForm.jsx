@@ -10,6 +10,7 @@ const LoginForm = () => {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -28,8 +29,8 @@ const LoginForm = () => {
       await login(formData.username, formData.password);
       const profile = await getProfile();
       localStorage.setItem('user', JSON.stringify(profile.user));
-      alert('Connexion réussie !');
-      navigate('/catalogue');
+      setSuccessMessage('✓ Connexion réussie ! Redirection en cours...');
+      setTimeout(() => navigate('/catalogue'), 1500);
     } catch (error) {
       if (error.response && error.response.data) {
         setErrors(error.response.data);
@@ -46,6 +47,20 @@ const LoginForm = () => {
       <div className="login-form">
         <h2>Se connecter à Geonia Hub</h2>
         <p>Accédez à votre compte contributeur</p>
+
+        {successMessage && (
+          <div style={{
+            padding: '12px 16px',
+            marginBottom: '16px',
+            background: '#d4edda',
+            color: '#155724',
+            borderRadius: '6px',
+            border: '1px solid #c3e6cb',
+            fontSize: '14px'
+          }}>
+            {successMessage}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">

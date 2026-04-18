@@ -20,6 +20,7 @@ const DatasetForm = () => {
   const [departments, setDepartments] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -67,13 +68,13 @@ const DatasetForm = () => {
 
     try {
       await submitDataset(formData);
-      alert('Dataset soumis avec succès ! Il sera examiné par un administrateur.');
-      navigate('/catalogue');
+      setSuccessMessage('✓ Dataset soumis avec succès ! Il sera examiné par un administrateur.');
+      setTimeout(() => navigate('/catalogue'), 2000);
     } catch (error) {
       if (error.response && error.response.data) {
         setErrors(error.response.data);
       } else {
-        setErrors({ general: 'Erreur de connexion. Veuillez réessayer.' });
+        setErrors({ general: 'Erreur lors de la soumission. Veuillez réessayer.' });
       }
     } finally {
       setLoading(false);
@@ -85,6 +86,20 @@ const DatasetForm = () => {
       <div className="dataset-form">
         <h2>Contribuer un dataset</h2>
         <p>Partagez vos données géographiques avec la communauté</p>
+
+        {successMessage && (
+          <div style={{
+            padding: '12px 16px',
+            marginBottom: '16px',
+            background: '#d4edda',
+            color: '#155724',
+            borderRadius: '6px',
+            border: '1px solid #c3e6cb',
+            fontSize: '14px'
+          }}>
+            {successMessage}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-section">
