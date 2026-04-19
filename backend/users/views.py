@@ -4,6 +4,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
+from django.core.mail import send_mail
+from django.conf import settings
 from .models import UserProfile
 from .serializers import (
     UserRegistrationSerializer,
@@ -23,6 +25,9 @@ class RegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
+        # Envoyer un email de notification
+        self.send_registration_email(user)
+
         # Générer les tokens JWT
         refresh = RefreshToken.for_user(user)
         tokens = {
@@ -35,6 +40,36 @@ class RegisterView(generics.CreateAPIView):
             'tokens': tokens,
             'message': 'Inscription réussie !'
         }, status=status.HTTP_201_CREATED)
+
+    def send_registration_email(self, user):
+        """Envoyer un email de notification pour nouvelle inscription"""
+        subject = f"Nouvelle inscription sur GéoNia Data Hub"
+        message = f"""
+Un nouvel utilisateur s'est inscrit sur GéoNia Data Hub :
+
+Informations de l'utilisateur :
+- Nom d'utilisateur : {user.username}
+- Email : {user.email}
+- Prénom : {user.first_name}
+- Nom : {user.last_name}
+- Type d'utilisateur : {user.profile.user_type}
+- Date d'inscription : {user.profile.created_at.strftime('%d/%m/%Y %H:%M')}
+
+Cordialement,
+L'équipe GéoNia Data Hub
+        """
+        
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@geonia.com'),
+                recipient_list=['geonia.tec@gmail.com'],
+                fail_silently=False,
+            )
+        except Exception as e:
+            # Logger l'erreur mais ne pas bloquer l'inscription
+            print(f"Erreur lors de l'envoi de l'email: {e}")
 
 
 class ProfileView(generics.RetrieveUpdateAPIView):

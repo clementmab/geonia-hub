@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import logoImage from '../images/GéoNia.jpg';
 
 const NAV_GREEN = '#0F6E56';
 
@@ -77,12 +78,26 @@ export default function Navbar() {
       justifyContent: 'space-between',
       height: '52px',
     }}>
-      <Link to="/" style={{ color: '#fff', fontSize: '18px',
-        fontWeight: '500', textDecoration: 'none' }}>
-        Geo<span style={{ color: '#9FE1CB', fontWeight: '400' }}>Nia</span>
-        {' '}
-        <span style={{ fontSize: '13px', fontWeight: '400',
-          color: '#9FE1CB' }}>Data Hub</span>
+      <Link to="/" style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        textDecoration: 'none' 
+      }}>
+        <img 
+          src={logoImage} 
+          alt="GéoNia Data Hub" 
+          style={{ 
+            height: '40px', 
+            marginRight: '8px' 
+          }} 
+        />
+        <span style={{ 
+          color: '#fff', 
+          fontSize: '16px', 
+          fontWeight: '500' 
+        }}>
+          Data Hub
+        </span>
       </Link>
 
       <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
