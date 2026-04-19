@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login, getProfile } from '../api/datasets';
+import { login } from '../api/datasets';
 import './LoginForm.css';
 
 const LoginForm = () => {
