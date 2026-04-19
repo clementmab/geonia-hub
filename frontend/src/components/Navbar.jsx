@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import logoImage from '../images/Geonia.jpg';
+import logoImage from '../images/GeoNiaa.jpg';
 
 const NAV_GREEN = '#0F6E56';
 
