@@ -72,7 +72,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+        'rest_framework.permissions.AllowAny',
     ),
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
@@ -83,8 +83,8 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 12,
 }
 
-# ── CORS (autorise le frontend React en développement) ─────────────────────
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://127.0.0.1:3000', cast=Csv())
+# ── CORS (autorise le frontend React en développement et production) ─────────────────────
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://127.0.0.1:3000,https://geonia-hub.onrender.com', cast=Csv())
 CORS_ALLOW_CREDENTIALS = True
 
 # ── Fichiers statiques et médias ────────────────────────────────────────────
