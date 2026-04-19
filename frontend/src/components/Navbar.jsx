@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { getProfile } from '../api/datasets';
 
 const NAV_GREEN = '#0F6E56';
 
@@ -23,39 +22,14 @@ export default function Navbar() {
       loadUser();
     };
 
-    // Vérifier périodiquement l'état d'authentification (fallback)
-    const checkAuthInterval = setInterval(() => {
-      const currentToken = localStorage.getItem('access_token');
-      const currentUserData = localStorage.getItem('user');
-
-      // Si on a un token mais pas d'utilisateur, essayer de récupérer le profil
-      if (currentToken && !currentUserData) {
-        fetchUserProfile();
-      } else if (currentToken && currentUserData) {
-        // Vérifier si l'utilisateur a changé
-        try {
-          const parsedUser = JSON.parse(currentUserData);
-          if (!user || user.id !== parsedUser.id) {
-            setUser(parsedUser);
-          }
-        } catch (e) {
-          console.error('Error parsing user data:', e);
-        }
-      } else if (!currentToken && user) {
-        // Utilisateur déconnecté
-        setUser(null);
-      }
-    }, 1000); // Vérifier chaque seconde
-
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('authChange', handleAuthChange);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('authChange', handleAuthChange);
-      clearInterval(checkAuthInterval);
     };
-  }, [user]);
+  }, []);
 
   const loadUser = () => {
     const token = localStorage.getItem('access_token');
@@ -73,20 +47,6 @@ export default function Navbar() {
     // Nettoyer les données invalides si nécessaire
     localStorage.removeItem('user');
     setUser(null);
-  };
-
-  const fetchUserProfile = async () => {
-    try {
-      const profile = await getProfile();
-      const userInfo = profile?.user ?? profile;
-
-      if (userInfo) {
-        localStorage.setItem('user', JSON.stringify(userInfo));
-        setUser(userInfo);
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-    }
   };
 
   const handleLogout = () => {

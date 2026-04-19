@@ -29,20 +29,13 @@ const LoginForm = () => {
       const loginData = await login(formData.username, formData.password);
       console.log('Login successful:', loginData);
 
-      const profile = await getProfile();
-      console.log('Profile data:', profile);
-      const userInfo = profile?.user ?? profile;
-
-      if (userInfo) {
-        localStorage.setItem('user', JSON.stringify(userInfo));
-        setSuccessMessage('✓ Connexion réussie ! Redirection en cours...');
-        // Notifier le Navbar du changement d'authentification
-        window.dispatchEvent(new Event('authChange'));
-        setTimeout(() => navigate('/catalogue'), 1500);
-      } else {
-        console.error('Profile data invalid:', profile);
-        setErrors({ general: 'Erreur lors de la récupération du profil utilisateur.' });
-      }
+      // Stocker les informations de base depuis la réponse login
+      const userInfo = loginData.user || { username: formData.username };
+      localStorage.setItem('user', JSON.stringify(userInfo));
+      setSuccessMessage('✓ Connexion réussie ! Redirection en cours...');
+      // Notifier le Navbar du changement d'authentification
+      window.dispatchEvent(new Event('authChange'));
+      setTimeout(() => navigate('/catalogue'), 1500);
     } catch (error) {
       console.error('Login error:', error);
       if (error.response && error.response.data) {
