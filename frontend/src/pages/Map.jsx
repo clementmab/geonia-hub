@@ -159,9 +159,6 @@ const Map = () => {
           return;
         }
 
-        // Obtenir les dimensions de la carte
-        const rect = mapContainer.getBoundingClientRect();
-        
         // Vérifier si html2canvas est disponible (import dynamique)
         import('html2canvas').then(html2canvasModule => {
           const html2canvas = html2canvasModule.default;
