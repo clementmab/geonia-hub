@@ -10,6 +10,7 @@ import Home from './pages/Home';
 import Catalogue from './pages/Catalogue';
 import Upload from './pages/Upload';
 import DatasetDetail from './pages/DatasetDetail';
+import Map from './pages/Map';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +45,7 @@ function App() {
               <Route path="/"          element={<Home />} />
               <Route path="/catalogue" element={<Catalogue />} />
               <Route path="/contribuer" element={<Upload />} />
+              <Route path="/map"         element={<Map />} />
               <Route path="/register"   element={<RegisterForm />} />
               <Route path="/login"      element={<LoginForm />} />
               <Route path="/dataset-form" element={<DatasetForm />} />

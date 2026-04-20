@@ -103,6 +103,7 @@ export default function Navbar() {
       <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
         <Link to="/"           style={linkStyle('/')}>Accueil</Link>
         <Link to="/catalogue"  style={linkStyle('/catalogue')}>Catalogue</Link>
+        <Link to="/map"         style={linkStyle('/map')}>Carte</Link>
         {user ? (
           <>
             <Link to="/contribuer" style={linkStyle('/contribuer')}>Contribuer</Link>
