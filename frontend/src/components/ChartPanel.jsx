@@ -28,18 +28,18 @@ const ChartPanel = ({ layersData = [] }) => {
   const [dataType, setDataType] = useState('pop');
   const [labelType, setLabelType] = useState('name');
 
-  // 🔧 Label du dataset
-  const getDataLabel = () => {
-    switch (dataType) {
-      case 'pop': return 'Population';
-      case 'area': return 'Surface (km²)';
-      case 'density': return 'Densité (hab/km²)';
-      default: return 'Valeur';
-    }
-  };
-
-  // 🔧 Préparation des données
+  // Préparer les données pour Chart.js - afficher les entités individuelles
   const prepareChartData = useCallback(() => {
+    // Label du dataset (déplacé ici pour éviter les dépendances externes)
+    const getDataLabel = () => {
+      switch (dataType) {
+        case 'pop': return 'Population';
+        case 'area': return 'Surface (km²)';
+        case 'density': return 'Densité (hab/km²)';
+        default: return 'Valeur';
+      }
+    };
+
     if (!layersData.length) return { labels: [], datasets: [] };
 
     const processed = layersData
