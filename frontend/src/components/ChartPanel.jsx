@@ -92,8 +92,8 @@ const ChartPanel = ({ layersData, layers }) => {
       let currentAngle = 0;
       const total = data.reduce((sum, d) => sum + d.value, 0);
       
-      data.forEach((d, i) => {
-        const percentage = d.value / total;
+      data.forEach((item, i) => {
+        const percentage = item.value / total;
         const angle = percentage * 2 * Math.PI;
         
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -104,22 +104,22 @@ const ChartPanel = ({ layersData, layers }) => {
         const x2 = centerX + radius * Math.cos(currentAngle + angle - Math.PI / 2);
         const y2 = centerY + radius * Math.sin(currentAngle + angle - Math.PI / 2);
         
-        const d = [
+        const pathData = [
           `M ${centerX} ${centerY}`,
           `L ${x1} ${y1}`,
           `A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`,
           'Z'
         ].join(' ');
         
-        path.setAttribute('d', d);
-        path.setAttribute('fill', d.color);
+        path.setAttribute('d', pathData);
+        path.setAttribute('fill', item.color);
         path.setAttribute('stroke', 'white');
         path.setAttribute('stroke-width', '2');
         path.setAttribute('class', 'chart-slice');
         
         path.addEventListener('mouseenter', (e) => {
           path.setAttribute('opacity', '0.8');
-          showTooltip(e, d);
+          showTooltip(e, item);
         });
         path.addEventListener('mouseleave', () => {
           path.setAttribute('opacity', '1');
