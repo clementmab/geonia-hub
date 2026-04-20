@@ -5,11 +5,36 @@ import './MapView.css';
 
 const MapView = ({ layers, onFeatureClick, updateActiveLayersData, mapRef }) => {
   const [geoJsonLayers, setGeoJsonLayers] = useState({});
+  const [selectedTileLayer, setSelectedTileLayer] = useState('osm');
   const leafletMapRef = useRef(null);
 
   // Centrer la carte sur le Congo
   const congoCenter = [-1.9, 15.5];
   const congoZoom = 6;
+
+  // Options de fonds de carte
+  const tileLayers = {
+    osm: {
+      name: 'OpenStreetMap',
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    },
+    satellite: {
+      name: 'Satellite',
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      attribution: '&copy; <a href="https://www.esri.com/">Esri</a> &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, swisstopo'
+    },
+    terrain: {
+      name: 'Terrain',
+      url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+      attribution: '&copy; <a href="https://www.opentopomap.org/">OpenTopoMap</a> contributors'
+    },
+    dark: {
+      name: 'Dark',
+      url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    }
+  };
 
   useEffect(() => {
     if (mapRef && leafletMapRef.current) {
@@ -102,6 +127,22 @@ const MapView = ({ layers, onFeatureClick, updateActiveLayersData, mapRef }) => 
 
   return (
     <div className="map-view">
+      {/* Sélecteur de fond de carte */}
+      <div className="tile-layer-selector">
+        <label>Fond de carte:</label>
+        <select 
+          value={selectedTileLayer} 
+          onChange={(e) => setSelectedTileLayer(e.target.value)}
+          className="tile-select"
+        >
+          {Object.keys(tileLayers).map(key => (
+            <option key={key} value={key}>
+              {tileLayers[key].name}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <MapContainer
         center={congoCenter}
         zoom={congoZoom}
@@ -109,8 +150,8 @@ const MapView = ({ layers, onFeatureClick, updateActiveLayersData, mapRef }) => 
         ref={leafletMapRef}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution={tileLayers[selectedTileLayer].attribution}
+          url={tileLayers[selectedTileLayer].url}
         />
         
         {Object.keys(geoJsonLayers).map(layerKey => (
