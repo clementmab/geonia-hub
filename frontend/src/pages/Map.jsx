@@ -55,10 +55,23 @@ const Map = () => {
       for (const layerKey of Object.keys(newLayers)) {
         try {
           const response = await fetch(`/data/${layerKey}.geojson`);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            throw new Error(`Réponse non-JSON: ${contentType}`);
+          }
+          
           const data = await response.json();
           newLayers[layerKey].data = data;
+          console.log(`Succès chargement ${layerKey}:`, data.features?.length || 0, 'entités');
         } catch (error) {
           console.error(`Erreur chargement ${layerKey}:`, error);
+          // Pas de bloquage si une couche échoue
+          newLayers[layerKey].data = null;
         }
       }
       
