@@ -33,6 +33,45 @@ const ChartPanel = ({ layersData, layers }) => {
     }));
   }, [layersData, dataType, layers]);
 
+  const formatValue = (value, type) => {
+    if (type === 'pop') {
+      return value.toLocaleString();
+    } else {
+      return `${value.toFixed(1)} km²`;
+    }
+  };
+
+  const showTooltip = useCallback((event, data) => {
+    const tooltip = document.createElement('div');
+    tooltip.className = 'chart-tooltip';
+    tooltip.innerHTML = `
+      <strong>${data.layerName}</strong><br>
+      ${dataType === 'pop' ? 'Population' : 'Surface'}: ${formatValue(data.value, dataType)}<br>
+      Entités: ${data.count}
+    `;
+    tooltip.style.position = 'absolute';
+    tooltip.style.background = 'rgba(0, 0, 0, 0.8)';
+    tooltip.style.color = 'white';
+    tooltip.style.padding = '8px';
+    tooltip.style.borderRadius = '4px';
+    tooltip.style.fontSize = '12px';
+    tooltip.style.pointerEvents = 'none';
+    tooltip.style.zIndex = '1000';
+    
+    document.body.appendChild(tooltip);
+    
+    const rect = event.target.getBoundingClientRect();
+    tooltip.style.left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
+    tooltip.style.top = rect.top - tooltip.offsetHeight - 5 + 'px';
+  }, [dataType]);
+
+  const hideTooltip = useCallback(() => {
+    const tooltip = document.querySelector('.chart-tooltip');
+    if (tooltip) {
+      tooltip.remove();
+    }
+  }, []);
+
   useEffect(() => {
     if (!chartRef.current || layersData.length === 0) return;
 
@@ -171,45 +210,6 @@ const ChartPanel = ({ layersData, layers }) => {
       });
     }
   }, [layersData, chartType, dataType, layers, prepareChartData, showTooltip, hideTooltip]);
-
-  const formatValue = (value, type) => {
-    if (type === 'pop') {
-      return value.toLocaleString();
-    } else {
-      return `${value.toFixed(1)} km²`;
-    }
-  };
-
-  const showTooltip = useCallback((event, data) => {
-    const tooltip = document.createElement('div');
-    tooltip.className = 'chart-tooltip';
-    tooltip.innerHTML = `
-      <strong>${data.layerName}</strong><br>
-      ${dataType === 'pop' ? 'Population' : 'Surface'}: ${formatValue(data.value, dataType)}<br>
-      Entités: ${data.count}
-    `;
-    tooltip.style.position = 'absolute';
-    tooltip.style.background = 'rgba(0, 0, 0, 0.8)';
-    tooltip.style.color = 'white';
-    tooltip.style.padding = '8px';
-    tooltip.style.borderRadius = '4px';
-    tooltip.style.fontSize = '12px';
-    tooltip.style.pointerEvents = 'none';
-    tooltip.style.zIndex = '1000';
-    
-    document.body.appendChild(tooltip);
-    
-    const rect = event.target.getBoundingClientRect();
-    tooltip.style.left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
-    tooltip.style.top = rect.top - tooltip.offsetHeight - 5 + 'px';
-  }, [dataType]);
-
-  const hideTooltip = useCallback(() => {
-    const tooltip = document.querySelector('.chart-tooltip');
-    if (tooltip) {
-      tooltip.remove();
-    }
-  }, []);
 
   return (
     <div className="chart-panel">
