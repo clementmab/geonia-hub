@@ -102,7 +102,7 @@ const ChartPanel = ({ layersData, layers }) => {
     const rect = event.target.getBoundingClientRect();
     tooltip.style.left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
     tooltip.style.top = rect.top - tooltip.offsetHeight - 5 + 'px';
-  }, [dataType]);
+  }, []);
 
   const hideTooltip = useCallback(() => {
     const tooltip = document.querySelector('.chart-tooltip');

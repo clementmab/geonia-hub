@@ -149,41 +149,51 @@ const Map = () => {
     setActiveLayersData(data);
   };
 
-  const exportMap = async () => {
+  const exportMap = () => {
     if (mapRef.current) {
       try {
-        // Import dynamique de html2canvas
-        const html2canvas = (await import('html2canvas')).default;
+        // Utiliser l'API native du navigateur pour capturer l'écran
+        // Note: Cette fonctionnalité est expérimentale et peut ne pas fonctionner sur tous les navigateurs
         
-        // Cibler le conteneur de la carte
-        const mapContainer = document.querySelector('.leaflet-container');
-        if (!mapContainer) {
-          alert('Carte non trouvée pour l\'export');
-          return;
+        if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+          navigator.mediaDevices.getDisplayMedia({
+            video: {
+              mediaSource: 'screen'
+            }
+          }).then(stream => {
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.play();
+            
+            video.onloadedmetadata = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(video, 0, 0);
+              
+              // Télécharger l'image
+              canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `geonia-map-${new Date().toISOString().slice(0, 10)}.png`;
+                link.click();
+                URL.revokeObjectURL(url);
+                stream.getTracks().forEach(track => track.stop());
+              }, 'image/png');
+            };
+          }).catch(err => {
+            console.error('Erreur capture écran:', err);
+            alert('Export non disponible sur ce navigateur. Veuillez utiliser une capture d\'écran manuelle.');
+          });
+        } else {
+          // Alternative: simple alert pour les navigateurs non compatibles
+          alert('Export PNG: Utilisez Ctrl+P pour imprimer ou une capture d\'écran manuelle.');
         }
-        
-        // Configurer html2canvas pour la carte
-        const canvas = await html2canvas(mapContainer, {
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: null,
-          scale: 2, // Haute qualité
-          logging: false
-        });
-        
-        // Convertir en image et télécharger
-        canvas.toBlob((blob) => {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `geonia-map-${new Date().toISOString().slice(0, 10)}.png`;
-          link.click();
-          URL.revokeObjectURL(url);
-        }, 'image/png');
-        
       } catch (error) {
         console.error('Erreur export PNG:', error);
-        alert('Erreur lors de l\'export: ' + error.message);
+        alert('Export non disponible. Utilisez une capture d\'écran manuelle.');
       }
     }
   };
