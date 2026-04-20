@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import './ChartPanel.css';
 
 const ChartPanel = ({ layersData, layers }) => {
@@ -7,7 +7,7 @@ const ChartPanel = ({ layersData, layers }) => {
   const chartRef = useRef(null);
 
   // Préparer les données pour D3
-  const prepareChartData = () => {
+  const prepareChartData = useCallback(() => {
     const aggregatedData = {};
     
     layersData.forEach(item => {
@@ -31,7 +31,7 @@ const ChartPanel = ({ layersData, layers }) => {
       count: aggregatedData[layerName].count,
       color: Object.keys(layers).find(key => layers[key].name === layerName)?.color || '#999'
     }));
-  };
+  }, [layersData, dataType, layers]);
 
   useEffect(() => {
     if (!chartRef.current || layersData.length === 0) return;
@@ -180,7 +180,7 @@ const ChartPanel = ({ layersData, layers }) => {
     }
   };
 
-  const showTooltip = (event, data) => {
+  const showTooltip = useCallback((event, data) => {
     const tooltip = document.createElement('div');
     tooltip.className = 'chart-tooltip';
     tooltip.innerHTML = `
@@ -202,14 +202,14 @@ const ChartPanel = ({ layersData, layers }) => {
     const rect = event.target.getBoundingClientRect();
     tooltip.style.left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
     tooltip.style.top = rect.top - tooltip.offsetHeight - 5 + 'px';
-  };
+  }, [dataType]);
 
-  const hideTooltip = () => {
+  const hideTooltip = useCallback(() => {
     const tooltip = document.querySelector('.chart-tooltip');
     if (tooltip) {
       tooltip.remove();
     }
-  };
+  }, []);
 
   return (
     <div className="chart-panel">
