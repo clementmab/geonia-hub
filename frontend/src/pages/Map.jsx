@@ -66,7 +66,7 @@ const Map = () => {
     };
 
     loadGeoJSONData();
-  }, []);
+  }, [layers]);
 
   const handleLayerToggle = (layerKey) => {
     setLayers(prev => ({

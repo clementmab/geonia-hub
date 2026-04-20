@@ -170,7 +170,7 @@ const ChartPanel = ({ layersData, layers }) => {
         g.appendChild(text);
       });
     }
-  }, [layersData, chartType, dataType, layers]);
+  }, [layersData, chartType, dataType, layers, prepareChartData, showTooltip, hideTooltip]);
 
   const formatValue = (value, type) => {
     if (type === 'pop') {
