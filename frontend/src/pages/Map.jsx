@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import MapView from '../components/MapView';
 import LayerControl from '../components/LayerControl';
 import ChartPanel from '../components/ChartPanel';
@@ -48,38 +48,74 @@ const Map = () => {
   const mapRef = useRef(null);
 
   // Charger les données GeoJSON au montage (une seule fois)
-  useEffect(() => {
-    const loadGeoJSONData = async () => {
-      const newLayers = { ...layers };
-      
-      for (const layerKey of Object.keys(newLayers)) {
-        try {
-          const response = await fetch(`/data/${layerKey}.geojson`);
-          
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          
-          const contentType = response.headers.get('content-type');
-          if (!contentType || (!contentType.includes('json'))) {
-            throw new Error(`Réponse non-JSON: ${contentType}`);
-          }
-          
-          const data = await response.json();
-          newLayers[layerKey].data = data;
-          console.log(`Succès chargement ${layerKey}:`, data.features?.length || 0, 'entités');
-        } catch (error) {
-          console.error(`Erreur chargement ${layerKey}:`, error);
-          // Pas de bloquage si une couche échoue
-          newLayers[layerKey].data = null;
-        }
+  const loadGeoJSONData = useCallback(async () => {
+    const initialLayers = {
+      'Arrondissements_Brazzaville': {
+        name: 'Arrondissements Brazzaville',
+        visible: false,
+        color: '#FF6B6B',
+        opacity: 0.7,
+        data: null
+      },
+      'Arrondissements_Pointe_Noire': {
+        name: 'Arrondissements Pointe-Noire',
+        visible: false,
+        color: '#4ECDC4',
+        opacity: 0.7,
+        data: null
+      },
+      'Departement_Congo': {
+        name: 'Départements Congo',
+        visible: false,
+        color: '#45B7D1',
+        opacity: 0.7,
+        data: null
+      },
+      'Districts_Congo': {
+        name: 'Districts Congo',
+        visible: false,
+        color: '#96CEB4',
+        opacity: 0.7,
+        data: null
+      },
+      'Quartiers_kintele': {
+        name: 'Quartiers Kintélé',
+        visible: false,
+        color: '#FFEAA7',
+        opacity: 0.7,
+        data: null
       }
-      
-      setLayers(newLayers);
     };
+    
+    for (const layerKey of Object.keys(initialLayers)) {
+      try {
+        const response = await fetch(`/data/${layerKey}.geojson`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || (!contentType.includes('json'))) {
+          throw new Error(`Réponse non-JSON: ${contentType}`);
+        }
+        
+        const data = await response.json();
+        initialLayers[layerKey].data = data;
+        console.log(`Succès chargement ${layerKey}:`, data.features?.length || 0, 'entités');
+      } catch (error) {
+        console.error(`Erreur chargement ${layerKey}:`, error);
+        // Pas de bloquage si une couche échoue
+        initialLayers[layerKey].data = null;
+      }
+    }
+    
+    setLayers(initialLayers);
+  }, []);
 
+  useEffect(() => {
     loadGeoJSONData();
-  }, []); // Plus de dépendance à 'layers' - chargement unique au montage
+  }, [loadGeoJSONData]);
 
   const handleLayerToggle = (layerKey) => {
     setLayers(prev => ({
