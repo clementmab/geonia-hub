@@ -168,8 +168,9 @@ const Map = () => {
         canvas.width = rect.width;
         canvas.height = rect.height;
         
-        // Utiliser html2canvas si disponible, sinon fallback
-        if (typeof html2canvas !== 'undefined') {
+        // Vérifier si html2canvas est disponible (import dynamique)
+        import('html2canvas').then(html2canvasModule => {
+          const html2canvas = html2canvasModule.default;
           html2canvas(mapContainer, {
             useCORS: true,
             allowTaint: true,
@@ -188,9 +189,10 @@ const Map = () => {
             console.error('Erreur html2canvas:', err);
             fallbackExport();
           });
-        } else {
+        }).catch(err => {
+          console.error('html2canvas non disponible:', err);
           fallbackExport();
-        }
+        });
         
         function fallbackExport() {
           // Alternative simple : utiliser window.print()
