@@ -4,67 +4,52 @@ import './ChartPanel.css';
 const ChartPanel = ({ layersData, layers }) => {
   const [chartType, setChartType] = useState('bar');
   const [dataType, setDataType] = useState('pop');
+  const [labelType, setLabelType] = useState('name');
   const chartRef = useRef(null);
 
-  // Préparer les données pour D3
+  // Préparer les données pour D3 - afficher les entités individuelles
   const prepareChartData = useCallback(() => {
-    const aggregatedData = {};
+    if (layersData.length === 0) return [];
     
-    layersData.forEach(item => {
-      const layerName = item.layerName;
-      if (!aggregatedData[layerName]) {
-        aggregatedData[layerName] = {
-          totalPop: 0,
-          totalArea: 0,
-          count: 0,
-          avgPop: 0,
-          avgArea: 0
-        };
-      }
-      
-      aggregatedData[layerName].totalPop += item.pop || 0;
-      aggregatedData[layerName].totalArea += item.area || 0;
-      aggregatedData[layerName].count += 1;
-    });
-
-    // Calculer les moyennes
-    Object.keys(aggregatedData).forEach(layerName => {
-      const data = aggregatedData[layerName];
-      data.avgPop = data.count > 0 ? data.totalPop / data.count : 0;
-      data.avgArea = data.count > 0 ? data.totalArea / data.count : 0;
-    });
-
-    return Object.keys(aggregatedData).map(layerName => {
-      const data = aggregatedData[layerName];
+    return layersData.map((item, index) => {
       let value, label;
       
       if (dataType === 'pop') {
-        value = data.totalPop;
-        label = `Population totale: ${value.toLocaleString()}`;
+        value = item.pop || 0;
+        label = `Population: ${value.toLocaleString()}`;
       } else if (dataType === 'area') {
-        value = data.totalArea;
-        label = `Surface totale: ${value.toFixed(1)} km²`;
-      } else if (dataType === 'avgpop') {
-        value = data.avgPop;
-        label = `Population moyenne: ${value.toLocaleString()}`;
-      } else if (dataType === 'avgarea') {
-        value = data.avgArea;
-        label = `Surface moyenne: ${value.toFixed(1)} km²`;
+        value = item.area || 0;
+        label = `Surface: ${value.toFixed(1)} km²`;
+      } else if (dataType === 'density') {
+        value = item.density || 0;
+        label = `Densité: ${value.toFixed(1)} hab/km²`;
       }
       
+      // Déterminer l'étiquette selon le choix de l'utilisateur
+      let displayLabel;
+      if (labelType === 'name') {
+        displayLabel = item.name || `Entité ${index + 1}`;
+      } else if (labelType === 'area') {
+        displayLabel = `${(item.area || 0).toFixed(1)} km²`;
+      } else if (labelType === 'pop') {
+        displayLabel = `${(item.pop || 0).toLocaleString()} hab.`;
+      }
+      
+      const layerColor = Object.keys(layers).find(key => layers[key].name === item.layerName)?.color || '#999';
+      
       return {
-        layerName,
-        value,
-        count: data.count,
-        color: Object.keys(layers).find(key => layers[key].name === layerName)?.color || '#999',
-        label,
-        totalPop: data.totalPop,
-        totalArea: data.totalArea,
-        avgPop: data.avgPop,
-        avgArea: data.avgArea
+        name: displayLabel,
+        value: value || 0,
+        layerName: item.layerName,
+        color: layerColor,
+        originalName: item.name,
+        pop: item.pop || 0,
+        area: item.area || 0,
+        density: item.density || 0,
+        label
       };
     }).filter(item => item.value > 0); // Filtrer les valeurs nulles
-  }, [layersData, dataType, layers]);
+  }, [layersData, dataType, labelType, layers]);
 
   const formatValue = (value, type) => {
     if (type === 'pop') {
@@ -78,12 +63,13 @@ const ChartPanel = ({ layersData, layers }) => {
     const tooltip = document.createElement('div');
     tooltip.className = 'chart-tooltip';
     tooltip.innerHTML = `
-      <strong>${data.layerName}</strong><br>
+      <strong>${data.originalName}</strong><br>
+      <em>Couche: ${data.layerName}</em><br>
       ${data.label}<br>
-      Entités: ${data.count}<br>
       <small>
-        Pop. totale: ${data.totalPop.toLocaleString()}<br>
-        Surf. totale: ${data.totalArea.toFixed(1)} km²
+        Population: ${data.pop.toLocaleString()} hab.<br>
+        Surface: ${data.area.toFixed(1)} km²<br>
+        Densité: ${data.density.toFixed(1)} hab/km²
       </small>
     `;
     tooltip.style.position = 'absolute';
@@ -94,7 +80,7 @@ const ChartPanel = ({ layersData, layers }) => {
     tooltip.style.fontSize = '12px';
     tooltip.style.pointerEvents = 'none';
     tooltip.style.zIndex = '1000';
-    tooltip.style.maxWidth = '200px';
+    tooltip.style.maxWidth = '220px';
     tooltip.style.lineHeight = '1.4';
     
     document.body.appendChild(tooltip);
@@ -271,10 +257,20 @@ const ChartPanel = ({ layersData, layers }) => {
             value={dataType} 
             onChange={(e) => setDataType(e.target.value)}
           >
-            <option value="pop">Population totale</option>
-            <option value="area">Surface totale</option>
-            <option value="avgpop">Population moyenne</option>
-            <option value="avgarea">Surface moyenne</option>
+            <option value="pop">Population</option>
+            <option value="area">Surface</option>
+            <option value="density">Densité</option>
+          </select>
+        </div>
+        <div className="control-group">
+          <label>Étiquettes:</label>
+          <select 
+            value={labelType} 
+            onChange={(e) => setLabelType(e.target.value)}
+          >
+            <option value="name">Nom de l'entité</option>
+            <option value="area">Superficie</option>
+            <option value="pop">Population</option>
           </select>
         </div>
       </div>
