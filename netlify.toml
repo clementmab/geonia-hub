@@ -7,6 +7,21 @@
   REACT_APP_API_URL = "https://geonia-hub.onrender.com/api"
 
 [[redirects]]
+  from = "/api/*"
+  to = "https://geonia-hub.onrender.com/api/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/data/*"
+  to = "/data/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/static/*"
+  to = "/static/:splat"
+  status = 200
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
