@@ -47,7 +47,7 @@ const Map = () => {
   const [activeLayersData, setActiveLayersData] = useState([]);
   const mapRef = useRef(null);
 
-  // Charger les données GeoJSON au montage
+  // Charger les données GeoJSON au montage (une seule fois)
   useEffect(() => {
     const loadGeoJSONData = async () => {
       const newLayers = { ...layers };
@@ -79,7 +79,7 @@ const Map = () => {
     };
 
     loadGeoJSONData();
-  }, [layers]);
+  }, []); // Plus de dépendance à 'layers' - chargement unique au montage
 
   const handleLayerToggle = (layerKey) => {
     setLayers(prev => ({
