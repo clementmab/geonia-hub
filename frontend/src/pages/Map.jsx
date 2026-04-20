@@ -149,10 +149,42 @@ const Map = () => {
     setActiveLayersData(data);
   };
 
-  const exportMap = () => {
+  const exportMap = async () => {
     if (mapRef.current) {
-      // Implémentation simple avec html2canvas si disponible
-      alert('Export en cours de développement...');
+      try {
+        // Import dynamique de html2canvas
+        const html2canvas = (await import('html2canvas')).default;
+        
+        // Cibler le conteneur de la carte
+        const mapContainer = document.querySelector('.leaflet-container');
+        if (!mapContainer) {
+          alert('Carte non trouvée pour l\'export');
+          return;
+        }
+        
+        // Configurer html2canvas pour la carte
+        const canvas = await html2canvas(mapContainer, {
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: null,
+          scale: 2, // Haute qualité
+          logging: false
+        });
+        
+        // Convertir en image et télécharger
+        canvas.toBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `geonia-map-${new Date().toISOString().slice(0, 10)}.png`;
+          link.click();
+          URL.revokeObjectURL(url);
+        }, 'image/png');
+        
+      } catch (error) {
+        console.error('Erreur export PNG:', error);
+        alert('Erreur lors de l\'export: ' + error.message);
+      }
     }
   };
 

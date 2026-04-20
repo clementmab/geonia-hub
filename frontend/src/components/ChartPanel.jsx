@@ -16,7 +16,9 @@ const ChartPanel = ({ layersData, layers }) => {
         aggregatedData[layerName] = {
           totalPop: 0,
           totalArea: 0,
-          count: 0
+          count: 0,
+          avgPop: 0,
+          avgArea: 0
         };
       }
       
@@ -25,12 +27,43 @@ const ChartPanel = ({ layersData, layers }) => {
       aggregatedData[layerName].count += 1;
     });
 
-    return Object.keys(aggregatedData).map(layerName => ({
-      layerName,
-      value: dataType === 'pop' ? aggregatedData[layerName].totalPop : aggregatedData[layerName].totalArea,
-      count: aggregatedData[layerName].count,
-      color: Object.keys(layers).find(key => layers[key].name === layerName)?.color || '#999'
-    }));
+    // Calculer les moyennes
+    Object.keys(aggregatedData).forEach(layerName => {
+      const data = aggregatedData[layerName];
+      data.avgPop = data.count > 0 ? data.totalPop / data.count : 0;
+      data.avgArea = data.count > 0 ? data.totalArea / data.count : 0;
+    });
+
+    return Object.keys(aggregatedData).map(layerName => {
+      const data = aggregatedData[layerName];
+      let value, label;
+      
+      if (dataType === 'pop') {
+        value = data.totalPop;
+        label = `Population totale: ${value.toLocaleString()}`;
+      } else if (dataType === 'area') {
+        value = data.totalArea;
+        label = `Surface totale: ${value.toFixed(1)} km²`;
+      } else if (dataType === 'avgpop') {
+        value = data.avgPop;
+        label = `Population moyenne: ${value.toLocaleString()}`;
+      } else if (dataType === 'avgarea') {
+        value = data.avgArea;
+        label = `Surface moyenne: ${value.toFixed(1)} km²`;
+      }
+      
+      return {
+        layerName,
+        value,
+        count: data.count,
+        color: Object.keys(layers).find(key => layers[key].name === layerName)?.color || '#999',
+        label,
+        totalPop: data.totalPop,
+        totalArea: data.totalArea,
+        avgPop: data.avgPop,
+        avgArea: data.avgArea
+      };
+    }).filter(item => item.value > 0); // Filtrer les valeurs nulles
   }, [layersData, dataType, layers]);
 
   const formatValue = (value, type) => {
@@ -46,17 +79,23 @@ const ChartPanel = ({ layersData, layers }) => {
     tooltip.className = 'chart-tooltip';
     tooltip.innerHTML = `
       <strong>${data.layerName}</strong><br>
-      ${dataType === 'pop' ? 'Population' : 'Surface'}: ${formatValue(data.value, dataType)}<br>
-      Entités: ${data.count}
+      ${data.label}<br>
+      Entités: ${data.count}<br>
+      <small>
+        Pop. totale: ${data.totalPop.toLocaleString()}<br>
+        Surf. totale: ${data.totalArea.toFixed(1)} km²
+      </small>
     `;
     tooltip.style.position = 'absolute';
-    tooltip.style.background = 'rgba(0, 0, 0, 0.8)';
+    tooltip.style.background = 'rgba(0, 0, 0, 0.9)';
     tooltip.style.color = 'white';
-    tooltip.style.padding = '8px';
-    tooltip.style.borderRadius = '4px';
+    tooltip.style.padding = '10px';
+    tooltip.style.borderRadius = '6px';
     tooltip.style.fontSize = '12px';
     tooltip.style.pointerEvents = 'none';
     tooltip.style.zIndex = '1000';
+    tooltip.style.maxWidth = '200px';
+    tooltip.style.lineHeight = '1.4';
     
     document.body.appendChild(tooltip);
     
@@ -221,22 +260,21 @@ const ChartPanel = ({ layersData, layers }) => {
           <select 
             value={chartType} 
             onChange={(e) => setChartType(e.target.value)}
-            className="chart-select"
           >
             <option value="bar">Barres</option>
             <option value="pie">Secteurs</option>
           </select>
         </div>
-        
         <div className="control-group">
-          <label>Données:</label>
+          <label>Type de données:</label>
           <select 
             value={dataType} 
             onChange={(e) => setDataType(e.target.value)}
-            className="chart-select"
           >
-            <option value="pop">Population</option>
-            <option value="area">Surface</option>
+            <option value="pop">Population totale</option>
+            <option value="area">Surface totale</option>
+            <option value="avgpop">Population moyenne</option>
+            <option value="avgarea">Surface moyenne</option>
           </select>
         </div>
       </div>
