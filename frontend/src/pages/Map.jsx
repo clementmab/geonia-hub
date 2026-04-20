@@ -61,7 +61,7 @@ const Map = () => {
           }
           
           const contentType = response.headers.get('content-type');
-          if (!contentType || !contentType.includes('application/json')) {
+          if (!contentType || (!contentType.includes('application/json') && !contentType.includes('application/geo+json'))) {
             throw new Error(`Réponse non-JSON: ${contentType}`);
           }
           
