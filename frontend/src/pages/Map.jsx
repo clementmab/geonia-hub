@@ -159,14 +159,8 @@ const Map = () => {
           return;
         }
 
-        // Créer un canvas et dessiner la carte
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
         // Obtenir les dimensions de la carte
         const rect = mapContainer.getBoundingClientRect();
-        canvas.width = rect.width;
-        canvas.height = rect.height;
         
         // Vérifier si html2canvas est disponible (import dynamique)
         import('html2canvas').then(html2canvasModule => {
