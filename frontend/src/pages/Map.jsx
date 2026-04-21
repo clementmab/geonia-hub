@@ -48,7 +48,7 @@ const Map = () => {
   const mapRef = useRef(null);
 
   // Charger les données GeoJSON au montage (une seule fois)
-  const loadGeoJSONData = useCallback(async () => {
+  const loadGeoJSONData = async () => {
     const initialLayers = {
       'Arrondissements_Brazzaville': {
         name: 'Arrondissements Brazzaville',
@@ -111,7 +111,7 @@ const Map = () => {
     }
     
     setLayers(initialLayers);
-  }, []);
+  };
 
   useEffect(() => {
     loadGeoJSONData();
