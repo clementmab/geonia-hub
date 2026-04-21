@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MapView from '../components/MapView';
 import LayerControl from '../components/LayerControl';
 import ChartPanel from '../components/ChartPanel';
