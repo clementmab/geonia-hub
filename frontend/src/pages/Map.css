@@ -3,6 +3,8 @@
   flex-direction: column;
   height: 100vh;
   background: #f5f9fc;
+  position: relative; /* Assurer que le contenu est bien positionné */
+  z-index: 1; /* Ne pas interférer avec la Navbar */
 }
 
 .map-header {
@@ -41,11 +43,21 @@
   display: flex;
   flex: 1;
   overflow: hidden;
+  position: relative; /* Assurer le positionnement correct */
+  z-index: 1; /* Ne pas bloquer la navigation */
 }
 
 .map-main {
   flex: 1;
   position: relative;
+  z-index: 1; /* Assurer que la carte ne bloque pas la Navbar */
+}
+
+.map-view {
+  height: 100%;
+  width: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .map-sidebar {

@@ -82,24 +82,38 @@ const MapView = ({ layers, onFeatureClick, updateActiveLayersData, mapRef }) => 
   }, [layers, updateActiveLayersData]);
 
   const onEachFeature = (feature, layer) => {
+    // Lier le popup directement à la couche
+    const popupContent = `
+      <div class="leaflet-popup">
+        <h4>${feature.properties.name || 'Sans nom'}</h4>
+        <p><strong>Population:</strong> ${feature.properties.pop?.toLocaleString() || 'N/A'}</p>
+        <p><strong>Surface:</strong> ${feature.properties.area?.toFixed(2) || 'N/A'} km²</p>
+        ${feature.properties.density ? `<p><strong>Densité:</strong> ${feature.properties.density.toFixed(2)} hab/km²</p>` : ''}
+      </div>
+    `;
+    layer.bindPopup(popupContent);
+
     // Style au hover
     layer.on({
       mouseover: (e) => {
-        const layer = e.target;
-        layer.setStyle({
+        const targetLayer = e.target;
+        targetLayer.setStyle({
           weight: 3,
           color: '#666',
           fillOpacity: 0.9
         });
-        layer.bringToFront();
+        targetLayer.bringToFront();
       },
       mouseout: (e) => {
-        const layer = e.target;
+        const targetLayer = e.target;
+        // Trouver la clé de la couche visible
         const layerKey = Object.keys(layers).find(key => 
-          layers[key].visible && layers[key].data === e.target.feature
+          layers[key].visible && layers[key].data && 
+          layers[key].data.features && 
+          layers[key].data.features.includes(feature)
         );
         if (layerKey) {
-          layer.setStyle({
+          targetLayer.setStyle({
             weight: 2,
             color: 'white',
             fillOpacity: layers[layerKey].opacity
@@ -107,22 +121,20 @@ const MapView = ({ layers, onFeatureClick, updateActiveLayersData, mapRef }) => 
         }
       },
       click: (e) => {
-        onFeatureClick(e.target.feature, Object.keys(layers).find(key => 
-          layers[key].visible && layers[key].data === e.target.feature
-        ));
+        // Ouvrir le popup au clic
+        e.target.openPopup();
+        
+        // Aussi déclencher le callback pour les données
+        const layerKey = Object.keys(layers).find(key => 
+          layers[key].visible && layers[key].data && 
+          layers[key].data.features && 
+          layers[key].data.features.includes(feature)
+        );
+        if (layerKey) {
+          onFeatureClick(feature, layerKey);
+        }
       }
     });
-  };
-
-  const bindPopup = (feature, layer) => {
-    const popupContent = `
-      <div class="leaflet-popup">
-        <h4>${feature.properties.name || 'Sans nom'}</h4>
-        <p><strong>Population:</strong> ${feature.properties.pop?.toLocaleString() || 'N/A'}</p>
-        <p><strong>Surface:</strong> ${feature.properties.area?.toFixed(2) || 'N/A'} km²</p>
-      </div>
-    `;
-    layer.bindPopup(popupContent);
   };
 
   return (
