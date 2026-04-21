@@ -80,6 +80,8 @@ export default function Navbar() {
       alignItems: 'center',
       justifyContent: 'space-between',
       height: '52px',
+      position: 'relative',
+      zIndex: 1000,
     }}>
       <Link to="/" style={{ 
         display: 'flex', 

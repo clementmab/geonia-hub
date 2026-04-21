@@ -159,7 +159,7 @@ const MapView = ({ layers, onFeatureClick, updateActiveLayersData, mapRef }) => 
       <MapContainer
         center={congoCenter}
         zoom={congoZoom}
-        style={{ height: '100%', width: '100%' }}
+        style={{ height: '100%', width: '100%', zIndex: 0 }}
         ref={leafletMapRef}
       >
         <TileLayer
