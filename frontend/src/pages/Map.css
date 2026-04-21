@@ -3,8 +3,8 @@
   flex-direction: column;
   height: 100vh;
   background: #f5f9fc;
-  position: relative; /* Assurer que le contenu est bien positionné */
-  z-index: 1; /* Ne pas interférer avec la Navbar */
+  position: relative;
+  z-index: 0; /* Éviter de bloquer la navigation */
 }
 
 .map-header {

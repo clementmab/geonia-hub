@@ -47,6 +47,16 @@
   cursor: pointer;
 }
 
+/* CSS CRITIQUE pour éviter que Leaflet bloque la navigation */
+.leaflet-container {
+  z-index: 0 !important;
+}
+
+nav {
+  position: relative;
+  z-index: 1000;
+}
+
 /* Sélecteur de fond de carte */
 .tile-layer-selector {
   position: absolute;
