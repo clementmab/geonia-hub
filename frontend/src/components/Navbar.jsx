@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import logoImage from '../images/GeoNiaa.jpg';
 
 const NAV_GREEN = '#0F6E56';
@@ -83,11 +83,17 @@ export default function Navbar() {
       position: 'relative',
       zIndex: 1000,
     }}>
-      <Link to="/" style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        textDecoration: 'none' 
-      }}>
+      <button 
+        onClick={() => handleNavigation('/')}
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          textDecoration: 'none',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer'
+        }}
+      >
         <img 
           src={logoImage} 
           alt="GéoNia Data Hub" 
@@ -103,15 +109,15 @@ export default function Navbar() {
         }}>
           Data Hub
         </span>
-      </Link>
+      </button>
 
       <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-        <Link to="/"           style={linkStyle('/')}>Accueil</Link>
-        <Link to="/catalogue"  style={linkStyle('/catalogue')}>Catalogue</Link>
-        <Link to="/map"         style={linkStyle('/map')}>Carte</Link>
+        <button onClick={() => handleNavigation('/')} style={linkStyle('/')}>Accueil</button>
+        <button onClick={() => handleNavigation('/catalogue')} style={linkStyle('/catalogue')}>Catalogue</button>
+        <button onClick={() => handleNavigation('/map')} style={linkStyle('/map')}>Carte</button>
         {user ? (
           <>
-            <Link to="/contribuer" style={linkStyle('/contribuer')}>Contribuer</Link>
+            <button onClick={() => handleNavigation('/contribuer')} style={linkStyle('/contribuer')}>Contribuer</button>
             <span style={{ color: '#9FE1CB', fontSize: '14px', margin: '0 10px' }}>
               Bienvenue, {user.first_name || user.username}
             </span>
@@ -133,8 +139,8 @@ export default function Navbar() {
           </>
         ) : (
           <>
-            <Link to="/register" style={linkStyle('/register')}>S'inscrire</Link>
-            <Link to="/login" style={linkStyle('/login')}>Se connecter</Link>
+            <button onClick={() => handleNavigation('/register')} style={linkStyle('/register')}>S'inscrire</button>
+            <button onClick={() => handleNavigation('/login')} style={linkStyle('/login')}>Se connecter</button>
           </>
         )}
       </div>
