@@ -172,7 +172,6 @@ const MapView = ({ layers, onFeatureClick, updateActiveLayersData, mapRef }) => 
             data={geoJsonLayers[layerKey].data}
             style={geoJsonLayers[layerKey].style}
             onEachFeature={onEachFeature}
-            bindPopup={bindPopup}
           />
         ))}
       </MapContainer>
