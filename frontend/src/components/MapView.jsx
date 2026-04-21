@@ -86,9 +86,10 @@ const MapView = ({ layers, onFeatureClick, updateActiveLayersData, mapRef }) => 
     const popupContent = `
       <div class="leaflet-popup">
         <h4>${feature.properties.name || 'Sans nom'}</h4>
+        <p><strong>Nom de la forme:</strong> ${feature.properties.name || 'N/A'}</p>
         <p><strong>Population:</strong> ${feature.properties.pop?.toLocaleString() || 'N/A'}</p>
-        <p><strong>Surface:</strong> ${feature.properties.area?.toFixed(2) || 'N/A'} km²</p>
-        ${feature.properties.density ? `<p><strong>Densité:</strong> ${feature.properties.density.toFixed(2)} hab/km²</p>` : ''}
+        <p><strong>Surface:</strong> ${feature.properties.area?.toFixed(2) || 'N/A'} ha</p>
+        ${feature.properties.density ? `<p><strong>Densité:</strong> ${feature.properties.density.toFixed(2)} hab/ha</p>` : ''}
       </div>
     `;
     layer.bindPopup(popupContent);

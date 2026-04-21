@@ -8,6 +8,7 @@ export default function Navbar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
     // Vérifier l'utilisateur au chargement
@@ -67,6 +68,9 @@ export default function Navbar() {
     borderRadius: '6px',
     textDecoration: 'none',
     fontSize: '14px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    border: '1px solid transparent'
   });
 
   return (
