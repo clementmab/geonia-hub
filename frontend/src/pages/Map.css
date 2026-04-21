@@ -3,8 +3,9 @@
   flex-direction: column;
   height: 100vh;
   background: #f5f9fc;
-  position: relative;
-  z-index: 0; /* Éviter de bloquer la navigation */
+  position: static; /* Éviter tout blocage */
+  z-index: auto; /* Remettre z-index par défaut */
+  pointer-events: auto; /* Assurer que les clics passent */
 }
 
 .map-header {
@@ -43,21 +44,24 @@
   display: flex;
   flex: 1;
   overflow: hidden;
-  position: relative; /* Assurer le positionnement correct */
-  z-index: 1; /* Ne pas bloquer la navigation */
+  position: static; /* Éviter tout blocage */
+  z-index: auto; /* Valeur par défaut */
+  pointer-events: auto; /* Assurer la propagation des clics */
 }
 
 .map-main {
   flex: 1;
-  position: relative;
-  z-index: 1; /* Assurer que la carte ne bloque pas la Navbar */
+  position: static; /* Éviter tout blocage */
+  z-index: auto; /* Valeur par défaut */
+  pointer-events: auto; /* Propagation des clics */
 }
 
 .map-view {
   height: 100%;
   width: 100%;
-  position: relative;
-  z-index: 1;
+  position: static; /* Éviter tout blocage */
+  z-index: auto; /* Valeur par défaut */
+  pointer-events: auto; /* Propagation des clics */
 }
 
 .map-sidebar {
