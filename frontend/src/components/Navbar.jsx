@@ -8,7 +8,6 @@ export default function Navbar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
     // Vérifier l'utilisateur au chargement
