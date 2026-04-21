@@ -115,7 +115,7 @@ const Map = () => {
 
   useEffect(() => {
     loadGeoJSONData();
-  }, [loadGeoJSONData]);
+  }, []); // Exécuter uniquement au montage
 
   const handleLayerToggle = (layerKey) => {
     setLayers(prev => ({
