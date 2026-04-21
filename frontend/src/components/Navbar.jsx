@@ -9,6 +9,11 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
+  const handleNavigation = (path) => {
+    console.log("CLICK OK - Navigation vers:", path);
+    navigate(path);
+  };
+
   useEffect(() => {
     // Vérifier l'utilisateur au chargement
     loadUser();
