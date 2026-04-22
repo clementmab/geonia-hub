@@ -1,89 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { flushSync } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import ChartPanel from '../components/ChartPanel';
 import LayerControl from '../components/LayerControl';
 import MapView from '../components/MapView';
+import { createInitialLayerConfig } from '../constants/mapLayers';
 import './Map.css';
 
-const initialLayerConfig = {
-  Arrondissements_Brazzaville: {
-    name: 'Arrondissements Brazzaville',
-    visible: false,
-    color: '#FF6B6B',
-    opacity: 0.7,
-    styleMode: 'single',
-    styleField: 'name',
-    labelEnabled: false,
-    labelField: 'name',
-    data: null,
-  },
-  Arrondissements_Pointe_Noire: {
-    name: 'Arrondissements Pointe-Noire',
-    visible: false,
-    color: '#4ECDC4',
-    opacity: 0.7,
-    styleMode: 'single',
-    styleField: 'name',
-    labelEnabled: false,
-    labelField: 'name',
-    data: null,
-  },
-  Departement_Congo: {
-    name: 'Departements Congo',
-    visible: false,
-    color: '#45B7D1',
-    opacity: 0.7,
-    styleMode: 'single',
-    styleField: 'name',
-    labelEnabled: false,
-    labelField: 'name',
-    data: null,
-  },
-  Districts_Congo: {
-    name: 'Districts Congo',
-    visible: false,
-    color: '#96CEB4',
-    opacity: 0.7,
-    styleMode: 'single',
-    styleField: 'name',
-    labelEnabled: false,
-    labelField: 'name',
-    data: null,
-  },
-  Quartiers_kintele: {
-    name: 'Quartiers Kintele',
-    visible: false,
-    color: '#FFEAA7',
-    opacity: 0.7,
-    styleMode: 'single',
-    styleField: 'name',
-    labelEnabled: false,
-    labelField: 'name',
-    data: null,
-  },
-};
-
 const Map = () => {
-  const [layers, setLayers] = useState(initialLayerConfig);
+  const navigate = useNavigate();
+  const [layers, setLayers] = useState(() => createInitialLayerConfig());
   const [selectedLayer, setSelectedLayer] = useState(null);
   const [activeLayersData, setActiveLayersData] = useState([]);
-  const [isExporting, setIsExporting] = useState(false);
   const mapRef = useRef(null);
-  const exportTargetRef = useRef(null);
-
-  useEffect(() => {
-    const handleAfterPrint = () => {
-      document.body.classList.remove('printing-map');
-      setIsExporting(false);
-    };
-
-    window.addEventListener('afterprint', handleAfterPrint);
-    return () => window.removeEventListener('afterprint', handleAfterPrint);
-  }, []);
 
   useEffect(() => {
     const loadGeoJSONData = async () => {
-      const nextLayers = JSON.parse(JSON.stringify(initialLayerConfig));
+      const nextLayers = createInitialLayerConfig();
 
       for (const layerKey of Object.keys(nextLayers)) {
         try {
@@ -139,39 +71,37 @@ const Map = () => {
     });
   };
 
-  const exportMap = async () => {
-    if (!mapRef.current || !exportTargetRef.current || isExporting) {
+  const exportMap = () => {
+    const visibleLayers = Object.fromEntries(
+      Object.entries(layers).filter(([, layer]) => layer.visible && layer.data)
+    );
+
+    if (!Object.keys(visibleLayers).length) {
+      alert("Active au moins une couche avant de preparer l'export.");
       return;
     }
 
-    flushSync(() => {
-      setSelectedLayer(null);
-      setIsExporting(true);
-    });
+    const exportId = `map-export-${Date.now()}`;
+    const exportPayload = {
+      createdAt: new Date().toISOString(),
+      layers,
+      activeLayersData,
+    };
 
-    try {
-      document.body.classList.add('printing-map');
-      mapRef.current.invalidateSize();
-      await new Promise((resolve) => setTimeout(resolve, 350));
-      window.print();
-    } catch (error) {
-      console.error('Erreur export:', error);
-      document.body.classList.remove('printing-map');
-      setIsExporting(false);
-      alert("Impossible de preparer l'export pour le moment.");
-    }
+    sessionStorage.setItem(exportId, JSON.stringify(exportPayload));
+    navigate(`/map/export?id=${encodeURIComponent(exportId)}`);
   };
 
   return (
-    <div className={`map-page${isExporting ? ' map-page--exporting' : ''}`}>
-      <div className="map-export-layout" ref={exportTargetRef}>
+    <div className="map-page">
+      <div className="map-export-layout">
       <div className="map-header">
         <div>
           <h1>Carte Interactive du Congo</h1>
           <p className="map-subtitle">Explorez les couches geospatiales avec une navigation plus lisible.</p>
         </div>
-        <button onClick={exportMap} className="export-btn" disabled={isExporting}>
-          {isExporting ? "Preparation de l'export..." : 'Exporter la mise en page'}
+        <button onClick={exportMap} className="export-btn">
+          Exporter la mise en page
         </button>
       </div>
 

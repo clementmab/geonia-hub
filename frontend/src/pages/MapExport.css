@@ -1,0 +1,259 @@
+.map-export-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.map-export-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 1rem 1.25rem;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #0F6E56 0%, #0C447C 100%);
+  color: #fff;
+}
+
+.map-export-toolbar h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.map-export-toolbar p {
+  margin: 0.35rem 0 0;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.map-export-toolbar__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.export-action {
+  border: 1px solid rgba(12, 68, 124, 0.15);
+  background: #fff;
+  color: #17324d;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.export-action--primary {
+  background: #9FE1CB;
+  color: #0F6E56;
+  border: none;
+}
+
+.export-action:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.map-export-sheet {
+  background: #fff;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 16px 38px rgba(12, 68, 124, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.map-export-sheet__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(12, 68, 124, 0.08);
+}
+
+.map-export-sheet__header h2 {
+  margin: 0;
+  color: #17324d;
+}
+
+.map-export-sheet__header p,
+.map-export-sheet__meta {
+  margin: 0.3rem 0 0;
+  color: #5d6c79;
+}
+
+.export-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.export-summary > div {
+  padding: 0.9rem 1rem;
+  background: #f7fafb;
+  border-radius: 12px;
+  border: 1px solid #e7eef2;
+}
+
+.export-summary strong {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 1.1rem;
+  color: #17324d;
+}
+
+.export-summary__label {
+  color: #5d6c79;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.map-export-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(340px, 0.95fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.map-export-side {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.export-card {
+  background: #fff;
+  border-radius: 18px;
+  border: 1px solid rgba(12, 68, 124, 0.08);
+  box-shadow: 0 10px 24px rgba(12, 68, 124, 0.08);
+  padding: 16px;
+}
+
+.export-card--map {
+  padding: 0;
+  overflow: hidden;
+  min-height: 760px;
+}
+
+.export-card__header {
+  margin-bottom: 12px;
+}
+
+.export-card__header h3 {
+  margin: 0;
+  color: #17324d;
+}
+
+.export-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.export-legend__group {
+  padding-top: 12px;
+  border-top: 1px solid #edf2f5;
+}
+
+.export-legend__group:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.export-legend__title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  color: #5d6c79;
+  font-size: 0.85rem;
+}
+
+.export-legend__items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.export-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #17324d;
+  font-size: 0.9rem;
+}
+
+.export-legend__swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.export-legend__more {
+  color: #5d6c79;
+  font-size: 0.82rem;
+}
+
+.export-empty {
+  text-align: center;
+  max-width: 560px;
+  margin: 80px auto 0;
+}
+
+.export-empty h2 {
+  margin: 0 0 8px;
+}
+
+body.map-export-printing nav,
+body.map-export-printing footer,
+body.map-export-printing .map-export-toolbar {
+  display: none !important;
+}
+
+body.map-export-printing main {
+  max-width: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+body.map-export-printing .map-export-page {
+  padding: 0;
+}
+
+body.map-export-printing .map-export-sheet {
+  box-shadow: none;
+  border-radius: 0;
+  padding: 10mm;
+}
+
+@page {
+  size: A4 landscape;
+  margin: 8mm;
+}
+
+@media print {
+  .map-export-grid {
+    grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.9fr);
+  }
+
+  .export-card,
+  .map-export-sheet {
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .map-export-toolbar,
+  .map-export-sheet__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .export-summary,
+  .map-export-grid {
+    grid-template-columns: 1fr;
+  }
+}

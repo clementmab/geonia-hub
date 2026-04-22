@@ -30,7 +30,13 @@ const tileLayers = {
 const congoCenter = [-1.9, 15.5];
 const congoZoom = 6;
 
-const MapView = ({ layers, onFeatureClick, updateActiveLayersData, mapRef }) => {
+const MapView = ({
+  layers,
+  onFeatureClick,
+  updateActiveLayersData,
+  mapRef,
+  showTileLayerSelector = true,
+}) => {
   const [geoJsonLayers, setGeoJsonLayers] = useState({});
   const [selectedTileLayer, setSelectedTileLayer] = useState('osm');
   const leafletMapRef = useRef(null);
@@ -127,20 +133,22 @@ const MapView = ({ layers, onFeatureClick, updateActiveLayersData, mapRef }) => 
 
   return (
     <div className="map-view">
-      <div className="tile-layer-selector">
-        <label>Fond de carte</label>
-        <select
-          value={selectedTileLayer}
-          onChange={(event) => setSelectedTileLayer(event.target.value)}
-          className="tile-select"
-        >
-          {Object.keys(tileLayers).map((key) => (
-            <option key={key} value={key}>
-              {tileLayers[key].name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {showTileLayerSelector && (
+        <div className="tile-layer-selector">
+          <label>Fond de carte</label>
+          <select
+            value={selectedTileLayer}
+            onChange={(event) => setSelectedTileLayer(event.target.value)}
+            className="tile-select"
+          >
+            {Object.keys(tileLayers).map((key) => (
+              <option key={key} value={key}>
+                {tileLayers[key].name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <MapContainer
         center={congoCenter}
