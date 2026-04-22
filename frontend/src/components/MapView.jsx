@@ -165,6 +165,7 @@ const MapView = ({ layers, onFeatureClick, updateActiveLayersData, mapRef }) => 
         <TileLayer
           attribution={tileLayers[selectedTileLayer].attribution}
           url={tileLayers[selectedTileLayer].url}
+          crossOrigin="anonymous"
         />
         
         {Object.keys(geoJsonLayers).map(layerKey => (

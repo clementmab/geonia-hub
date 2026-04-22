@@ -85,8 +85,10 @@ export default function Navbar() {
       alignItems: 'center',
       justifyContent: 'space-between',
       height: '52px',
-      position: 'relative',
-      zIndex: 1000,
+      position: 'sticky',
+      top: 0,
+      zIndex: 1200,
+      boxShadow: '0 6px 18px rgba(0, 0, 0, 0.12)',
     }}>
       <button 
         onClick={() => handleNavigation('/')}
