@@ -133,6 +133,22 @@
   margin-bottom: 0.5rem;
 }
 
+.style-select {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #d6dde3;
+  border-radius: 8px;
+  background: #fff;
+  color: #263238;
+  font-size: 0.9rem;
+}
+
+.style-select:focus {
+  outline: none;
+  border-color: #0F6E56;
+  box-shadow: 0 0 0 2px rgba(15, 110, 86, 0.12);
+}
+
 .color-input-group {
   display: flex;
   gap: 0.5rem;
@@ -210,6 +226,14 @@
   padding: 1rem;
 }
 
+.mini-legend {
+  margin-top: 1rem;
+  padding: 0.85rem;
+  border-radius: 8px;
+  background: #f7fafb;
+  border: 1px solid #ebf0f3;
+}
+
 .layer-legend h4 {
   margin: 0 0 0.75rem 0;
   color: #0F6E56;
@@ -241,4 +265,10 @@
 .legend-text {
   color: #555;
   font-weight: 500;
+}
+
+.legend-more {
+  margin-top: 0.6rem;
+  font-size: 0.78rem;
+  color: #6a7b86;
 }

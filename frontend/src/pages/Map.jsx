@@ -11,6 +11,8 @@ const initialLayerConfig = {
     visible: false,
     color: '#FF6B6B',
     opacity: 0.7,
+    styleMode: 'single',
+    styleField: 'name',
     data: null,
   },
   Arrondissements_Pointe_Noire: {
@@ -18,6 +20,8 @@ const initialLayerConfig = {
     visible: false,
     color: '#4ECDC4',
     opacity: 0.7,
+    styleMode: 'single',
+    styleField: 'name',
     data: null,
   },
   Departement_Congo: {
@@ -25,6 +29,8 @@ const initialLayerConfig = {
     visible: false,
     color: '#45B7D1',
     opacity: 0.7,
+    styleMode: 'single',
+    styleField: 'name',
     data: null,
   },
   Districts_Congo: {
@@ -32,6 +38,8 @@ const initialLayerConfig = {
     visible: false,
     color: '#96CEB4',
     opacity: 0.7,
+    styleMode: 'single',
+    styleField: 'name',
     data: null,
   },
   Quartiers_kintele: {
@@ -39,6 +47,8 @@ const initialLayerConfig = {
     visible: false,
     color: '#FFEAA7',
     opacity: 0.7,
+    styleMode: 'single',
+    styleField: 'name',
     data: null,
   },
 };
