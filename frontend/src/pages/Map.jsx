@@ -13,6 +13,8 @@ const initialLayerConfig = {
     opacity: 0.7,
     styleMode: 'single',
     styleField: 'name',
+    labelEnabled: false,
+    labelField: 'name',
     data: null,
   },
   Arrondissements_Pointe_Noire: {
@@ -22,6 +24,8 @@ const initialLayerConfig = {
     opacity: 0.7,
     styleMode: 'single',
     styleField: 'name',
+    labelEnabled: false,
+    labelField: 'name',
     data: null,
   },
   Departement_Congo: {
@@ -31,6 +35,8 @@ const initialLayerConfig = {
     opacity: 0.7,
     styleMode: 'single',
     styleField: 'name',
+    labelEnabled: false,
+    labelField: 'name',
     data: null,
   },
   Districts_Congo: {
@@ -40,6 +46,8 @@ const initialLayerConfig = {
     opacity: 0.7,
     styleMode: 'single',
     styleField: 'name',
+    labelEnabled: false,
+    labelField: 'name',
     data: null,
   },
   Quartiers_kintele: {
@@ -49,6 +57,8 @@ const initialLayerConfig = {
     opacity: 0.7,
     styleMode: 'single',
     styleField: 'name',
+    labelEnabled: false,
+    labelField: 'name',
     data: null,
   },
 };
@@ -151,7 +161,8 @@ const Map = () => {
   };
 
   return (
-    <div className="map-page">
+    <div className={`map-page${isExporting ? ' map-page--exporting' : ''}`}>
+      <div className="map-export-layout" ref={exportTargetRef}>
       <div className="map-header">
         <div>
           <h1>Carte Interactive du Congo</h1>
@@ -163,7 +174,7 @@ const Map = () => {
       </div>
 
       <div className="map-container">
-        <div className="map-main" ref={exportTargetRef}>
+        <div className="map-main">
           <MapView
             layers={layers}
             onFeatureClick={handleFeatureClick}
@@ -186,6 +197,7 @@ const Map = () => {
             />
           )}
         </div>
+      </div>
       </div>
 
       {selectedLayer && (

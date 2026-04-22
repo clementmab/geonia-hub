@@ -30,6 +30,10 @@ const LayerControl = ({ layers, onToggle, onStyleChange }) => {
     }
   };
 
+  const handleLabelToggle = (layerKey, enabled) => {
+    onStyleChange(layerKey, 'labelEnabled', enabled);
+  };
+
   return (
     <div className="layer-control">
       <h3>Controle des couches</h3>
@@ -90,6 +94,34 @@ const LayerControl = ({ layers, onToggle, onStyleChange }) => {
                         className="style-select"
                       >
                         {availableFields.map((field) => (
+                          <option key={field} value={field}>
+                            {field}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div className="control-group">
+                    <label className="inline-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(layer.labelEnabled)}
+                        onChange={(event) => handleLabelToggle(layerKey, event.target.checked)}
+                      />
+                      <span>Afficher les etiquettes</span>
+                    </label>
+                  </div>
+
+                  {layer.labelEnabled && allFields.length > 0 && (
+                    <div className="control-group">
+                      <label>Champ d etiquette</label>
+                      <select
+                        value={layer.labelField || 'name'}
+                        onChange={(event) => onStyleChange(layerKey, 'labelField', event.target.value)}
+                        className="style-select"
+                      >
+                        {allFields.map((field) => (
                           <option key={field} value={field}>
                             {field}
                           </option>

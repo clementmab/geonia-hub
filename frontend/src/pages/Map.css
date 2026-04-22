@@ -7,6 +7,12 @@
   gap: 18px;
 }
 
+.map-export-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
 .map-header {
   display: flex;
   justify-content: space-between;
@@ -81,6 +87,20 @@
   border: 1px solid rgba(12, 68, 124, 0.08);
 }
 
+.map-page--exporting .map-container {
+  height: auto;
+  align-items: start;
+}
+
+.map-page--exporting .map-main {
+  min-height: 700px;
+}
+
+.map-page--exporting .map-sidebar {
+  overflow: visible;
+  max-height: none;
+}
+
 .feature-popup {
   position: fixed;
   top: 50%;
@@ -129,6 +149,10 @@
   .map-container {
     grid-template-columns: 1fr;
     height: auto;
+  }
+
+  .map-export-layout {
+    gap: 14px;
   }
 
   .map-main {

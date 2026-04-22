@@ -92,8 +92,18 @@ const MapView = ({ layers, onFeatureClick, updateActiveLayersData, mapRef }) => 
   const onEachFeature = (layerKey) => (feature, leafletLayer) => {
     const layerConfig = layers[layerKey];
     const symbology = buildLayerSymbology(layerConfig);
+    const labelField = layerConfig.labelField || 'name';
+    const labelValue = feature?.properties?.[labelField];
 
     leafletLayer.bindPopup(getPopupContent(feature));
+
+    if (layerConfig.labelEnabled && labelValue !== undefined && labelValue !== null && labelValue !== '') {
+      leafletLayer.bindTooltip(String(labelValue), {
+        permanent: true,
+        direction: 'center',
+        className: 'map-feature-label',
+      });
+    }
 
     leafletLayer.on({
       mouseover: (event) => {
