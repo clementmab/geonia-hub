@@ -134,6 +134,12 @@
   padding: 0;
   overflow: hidden;
   min-height: 760px;
+  height: 760px;
+}
+
+.export-card--map .map-view {
+  height: 100%;
+  width: 100%;
 }
 
 .export-card__header {

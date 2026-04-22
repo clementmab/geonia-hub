@@ -111,6 +111,15 @@ export default function MapExport() {
     );
   }, [payload]);
 
+  useEffect(() => {
+    // Forcer le rafraîchissement de la carte lorsque les couches visibles changent
+    if (mapRef.current) {
+      setTimeout(() => {
+        mapRef.current?.invalidateSize();
+      }, 200);
+    }
+  }, [visibleLayers]);
+
   const exportAsPng = async () => {
     if (!exportRef.current || isExporting) {
       return;
