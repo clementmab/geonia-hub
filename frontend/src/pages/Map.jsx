@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import html2canvas from 'html2canvas';
+import { flushSync } from 'react-dom';
 import ChartPanel from '../components/ChartPanel';
 import LayerControl from '../components/LayerControl';
 import MapView from '../components/MapView';
@@ -72,6 +72,16 @@ const Map = () => {
   const exportTargetRef = useRef(null);
 
   useEffect(() => {
+    const handleAfterPrint = () => {
+      document.body.classList.remove('printing-map');
+      setIsExporting(false);
+    };
+
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => window.removeEventListener('afterprint', handleAfterPrint);
+  }, []);
+
+  useEffect(() => {
     const loadGeoJSONData = async () => {
       const nextLayers = JSON.parse(JSON.stringify(initialLayerConfig));
 
@@ -134,29 +144,21 @@ const Map = () => {
       return;
     }
 
-    setIsExporting(true);
+    flushSync(() => {
+      setSelectedLayer(null);
+      setIsExporting(true);
+    });
 
     try {
+      document.body.classList.add('printing-map');
       mapRef.current.invalidateSize();
       await new Promise((resolve) => setTimeout(resolve, 350));
-
-      const canvas = await html2canvas(exportTargetRef.current, {
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: '#ffffff',
-        scale: window.devicePixelRatio > 1 ? 2 : 1,
-        logging: false,
-      });
-
-      const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/png');
-      link.download = `geonia-map-${new Date().toISOString().slice(0, 10)}.png`;
-      link.click();
+      window.print();
     } catch (error) {
-      console.error('Erreur export PNG:', error);
-      alert('Impossible d exporter la carte pour le moment. Verifiez que les tuiles sont chargees puis reessayez.');
-    } finally {
+      console.error('Erreur export:', error);
+      document.body.classList.remove('printing-map');
       setIsExporting(false);
+      alert("Impossible de preparer l'export pour le moment.");
     }
   };
 
@@ -169,7 +171,7 @@ const Map = () => {
           <p className="map-subtitle">Explorez les couches geospatiales avec une navigation plus lisible.</p>
         </div>
         <button onClick={exportMap} className="export-btn" disabled={isExporting}>
-          {isExporting ? 'Export en cours...' : 'Exporter en PNG'}
+          {isExporting ? "Preparation de l'export..." : 'Exporter la mise en page'}
         </button>
       </div>
 

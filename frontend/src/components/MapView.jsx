@@ -156,7 +156,15 @@ const MapView = ({ layers, onFeatureClick, updateActiveLayersData, mapRef }) => 
 
         {Object.keys(geoJsonLayers).map((layerKey) => (
           <GeoJSON
-            key={layerKey}
+            key={[
+              layerKey,
+              layers[layerKey]?.styleMode,
+              layers[layerKey]?.styleField,
+              layers[layerKey]?.color,
+              layers[layerKey]?.opacity,
+              layers[layerKey]?.labelEnabled,
+              layers[layerKey]?.labelField,
+            ].join(':')}
             data={geoJsonLayers[layerKey].data}
             style={geoJsonLayers[layerKey].getFeatureStyle}
             onEachFeature={onEachFeature(layerKey)}

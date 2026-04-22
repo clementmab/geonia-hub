@@ -101,6 +101,76 @@
   max-height: none;
 }
 
+body.printing-map {
+  background: #ffffff !important;
+}
+
+body.printing-map nav,
+body.printing-map footer,
+body.printing-map .feature-popup {
+  display: none !important;
+}
+
+body.printing-map main {
+  max-width: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+body.printing-map .map-page {
+  background: #ffffff;
+  padding: 0;
+}
+
+body.printing-map .map-export-layout {
+  gap: 12px;
+}
+
+body.printing-map .map-container {
+  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.9fr);
+  height: auto;
+  align-items: start;
+}
+
+body.printing-map .map-main {
+  min-height: 720px;
+}
+
+body.printing-map .map-sidebar {
+  overflow: visible;
+  max-height: none;
+}
+
+body.printing-map .tile-layer-selector {
+  display: none;
+}
+
+@page {
+  size: A4 landscape;
+  margin: 10mm;
+}
+
+@media print {
+  .map-page {
+    gap: 12px;
+  }
+
+  .map-header {
+    box-shadow: none;
+    border: 1px solid rgba(12, 68, 124, 0.12);
+  }
+
+  .export-btn {
+    display: none;
+  }
+
+  .map-sidebar,
+  .map-view {
+    box-shadow: none;
+  }
+}
+
 .feature-popup {
   position: fixed;
   top: 50%;
