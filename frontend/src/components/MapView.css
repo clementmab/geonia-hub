@@ -1,6 +1,8 @@
 .map-view {
   height: 100%;
   width: 100%;
+  position: relative;
+  min-height: 0;
 }
 
 .leaflet-popup {
@@ -62,7 +64,7 @@ nav {
   position: absolute;
   top: 20px;
   right: 20px;
-  z-index: 1000;
+  z-index: 500;
   background: rgba(255, 255, 255, 0.95);
   padding: 8px 12px;
   border-radius: 6px;
