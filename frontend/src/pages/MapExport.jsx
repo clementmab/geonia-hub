@@ -6,6 +6,24 @@ import MapView, { congoCenter, congoZoom, defaultTileLayer } from '../components
 import { buildLayerSymbology } from '../utils/symbology';
 import './MapExport.css';
 
+// État local pour la gestion des couches dans MapExport
+const initializeLayers = () => {
+  // Charger les données GeoJSON directement depuis les fichiers de données
+  // Au lieu de dépendre de sessionStorage depuis la page Map
+  return {
+    congo_departements: {
+      name: 'Départements du Congo',
+      visible: true,
+      data: null, // Sera chargé depuis l'API
+      styleMode: 'single',
+      color: '#0F6E56',
+      opacity: 0.7,
+      labelEnabled: false,
+      labelField: 'name'
+    }
+  };
+};
+
 function ExportLegend({ layers }) {
   const visibleLayers = Object.entries(layers).filter(([, layer]) => layer.visible && layer.data);
 
@@ -64,40 +82,121 @@ function ExportSummary({ layers }) {
   );
 }
 
+function StyleControls({ layers, onUpdateLayer }) {
+  return (
+    <section className="export-card">
+      <div className="export-card__header">
+        <h3>Contrôles de style</h3>
+      </div>
+      <div className="style-controls">
+        {Object.entries(layers).map(([layerKey, layer]) => (
+          <div key={layerKey} className="style-control__group">
+            <h4>{layer.name}</h4>
+            
+            <div className="style-control__row">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={layer.visible}
+                  onChange={(e) => onUpdateLayer(layerKey, { visible: e.target.checked })}
+                />
+                Visible
+              </label>
+            </div>
+            
+            <div className="style-control__row">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={layer.labelEnabled}
+                  onChange={(e) => onUpdateLayer(layerKey, { labelEnabled: e.target.checked })}
+                />
+                Afficher les étiquettes
+              </label>
+            </div>
+            
+            <div className="style-control__row">
+              <label>Couleur:</label>
+              <input
+                type="color"
+                value={layer.color}
+                onChange={(e) => onUpdateLayer(layerKey, { color: e.target.value })}
+                className="color-input"
+              />
+            </div>
+            
+            <div className="style-control__row">
+              <label>Opacité:</label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={layer.opacity}
+                onChange={(e) => onUpdateLayer(layerKey, { opacity: parseFloat(e.target.value) })}
+                className="opacity-slider"
+              />
+              <span>{Math.round(layer.opacity * 100)}%</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function MapExport() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [payload, setPayload] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
   const exportRef = useRef(null);
   const mapRef = useRef(null);
-
+  
+  // État autonome pour les couches (indépendant de la page Map)
+  const [layers, setLayers] = useState(initializeLayers());
+  const [mapView, setMapView] = useState({
+    center: congoCenter,
+    zoom: congoZoom,
+    tileLayer: defaultTileLayer
+  });
+  const [activeLayersData, setActiveLayersData] = useState([]);
+  
+  // Vérifier si un ID d'export est fourni (pour compatibilité)
   const exportId = searchParams.get('id');
-  const exportMapView = useMemo(
-    () => payload?.mapView || {
-      center: congoCenter,
-      zoom: congoZoom,
-      tileLayer: defaultTileLayer,
-    },
-    [payload?.mapView]
-  );
-
+  
+  // Charger les données GeoJSON directement
   useEffect(() => {
-    if (!exportId) {
-      return;
-    }
-
-    const raw = sessionStorage.getItem(exportId);
-    if (!raw) {
-      return;
-    }
-
-    try {
-      setPayload(JSON.parse(raw));
-    } catch (error) {
-      console.error("Impossible de lire l'etat d'export:", error);
-    }
-  }, [exportId]);
+    const loadGeoData = async () => {
+      try {
+        // Charger les données depuis l'API ou les fichiers locaux
+        const response = await fetch('/data/conogo_departements.geojson');
+        const geoData = await response.json();
+        
+        setLayers(prev => ({
+          ...prev,
+          congo_departements: {
+            ...prev.congo_departements,
+            data: geoData
+          }
+        }));
+        
+        // Mettre à jour les données actives
+        const activeData = geoData.features.map(feature => ({
+          name: feature.properties.name,
+          pop: feature.properties.pop || 0,
+          area: feature.properties.area || 0,
+          layerName: 'Départements du Congo',
+          layerKey: 'congo_departements'
+        }));
+        setActiveLayersData(activeData);
+        
+      } catch (error) {
+        console.error('Erreur de chargement des données:', error);
+      }
+    };
+    
+    loadGeoData();
+  }, []);
 
   useEffect(() => {
     const handleAfterPrint = () => {
@@ -109,28 +208,41 @@ export default function MapExport() {
     return () => window.removeEventListener('afterprint', handleAfterPrint);
   }, []);
 
+  // Gestionnaire pour mettre à jour les couches
+  const updateLayer = (layerKey, updates) => {
+    setLayers(prev => ({
+      ...prev,
+      [layerKey]: {
+        ...prev[layerKey],
+        ...updates
+      }
+    }));
+  };
+  
+  // Gestionnaire pour mettre à jour la vue de la carte
+  const updateMapView = (newView) => {
+    setMapView(prev => ({ ...prev, ...newView }));
+  };
+  
+  // Couches visibles
   const visibleLayers = useMemo(() => {
-    if (!payload?.layers) {
-      return {};
-    }
-
     return Object.fromEntries(
-      Object.entries(payload.layers).filter(([, layer]) => layer.visible && layer.data)
+      Object.entries(layers).filter(([, layer]) => layer.visible && layer.data)
     );
-  }, [payload]);
+  }, [layers]);
 
   useEffect(() => {
     if (mapRef.current) {
       setTimeout(() => {
         mapRef.current?.invalidateSize();
         mapRef.current?.setView(
-          exportMapView.center || congoCenter,
-          typeof exportMapView.zoom === 'number' ? exportMapView.zoom : congoZoom,
+          mapView.center || congoCenter,
+          typeof mapView.zoom === 'number' ? mapView.zoom : congoZoom,
           { animate: false }
         );
       }, 200);
     }
-  }, [visibleLayers, exportMapView]);
+  }, [visibleLayers, mapView]);
 
   const exportAsPng = async () => {
     if (!exportRef.current || isExporting) {
@@ -142,8 +254,8 @@ export default function MapExport() {
     try {
       mapRef.current?.invalidateSize();
       mapRef.current?.setView(
-        exportMapView.center || congoCenter,
-        typeof exportMapView.zoom === 'number' ? exportMapView.zoom : congoZoom,
+        mapView.center || congoCenter,
+        typeof mapView.zoom === 'number' ? mapView.zoom : congoZoom,
         { animate: false }
       );
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -172,8 +284,8 @@ export default function MapExport() {
     setIsExporting(true);
     mapRef.current?.invalidateSize();
     mapRef.current?.setView(
-      exportMapView.center || congoCenter,
-      typeof exportMapView.zoom === 'number' ? exportMapView.zoom : congoZoom,
+      mapView.center || congoCenter,
+      typeof mapView.zoom === 'number' ? mapView.zoom : congoZoom,
       { animate: false }
     );
     document.body.classList.add('map-export-printing');
@@ -181,15 +293,12 @@ export default function MapExport() {
     window.print();
   };
 
-  if (!payload || !Object.keys(visibleLayers).length) {
+  if (!Object.keys(visibleLayers).length) {
     return (
       <div className="map-export-page map-export-page--empty">
         <div className="export-card export-empty">
-          <h2>Aucune composition a exporter</h2>
-          <p>Retourne sur la carte, active tes couches et relance l'export.</p>
-          <button className="export-action export-action--primary" onClick={() => navigate('/map')}>
-            Retour a la carte
-          </button>
+          <h2>Chargement des données...</h2>
+          <p>Veuillez patienter pendant le chargement des couches géographiques.</p>
         </div>
       </div>
     );
@@ -219,10 +328,10 @@ export default function MapExport() {
         <header className="map-export-sheet__header">
           <div>
             <h2>Carte thematique du Congo</h2>
-            <p>Composition generee depuis GeoNia Data Hub</p>
+            <p>Composition generee depuis GeoNia Data Hub - Mode autonome</p>
           </div>
           <div className="map-export-sheet__meta">
-            <span>{new Date(payload.createdAt || Date.now()).toLocaleString('fr-FR')}</span>
+            <span>{new Date().toLocaleString('fr-FR')}</span>
           </div>
         </header>
 
@@ -233,20 +342,23 @@ export default function MapExport() {
             <MapView
               layers={visibleLayers}
               onFeatureClick={() => {}}
-              updateActiveLayersData={() => {}}
+              updateActiveLayersData={setActiveLayersData}
               mapRef={mapRef}
-              initialView={exportMapView}
-              showTileLayerSelector={false}
+              initialView={mapView}
+              showTileLayerSelector={true}
+              onMapViewChange={updateMapView}
+              onLayerUpdate={updateLayer}
             />
           </div>
 
           <div className="map-export-side">
+            <StyleControls layers={layers} onUpdateLayer={updateLayer} />
             <ExportLegend layers={visibleLayers} />
             <section className="export-card">
               <div className="export-card__header">
                 <h3>Diagrammes</h3>
               </div>
-              <ChartPanel layersData={payload.activeLayersData || []} />
+              <ChartPanel layersData={activeLayersData} />
             </section>
           </div>
         </section>
