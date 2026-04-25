@@ -73,11 +73,14 @@ export default function MapExport() {
   const mapRef = useRef(null);
 
   const exportId = searchParams.get('id');
-  const exportMapView = payload?.mapView || {
-    center: congoCenter,
-    zoom: congoZoom,
-    tileLayer: defaultTileLayer,
-  };
+  const exportMapView = useMemo(
+    () => payload?.mapView || {
+      center: congoCenter,
+      zoom: congoZoom,
+      tileLayer: defaultTileLayer,
+    },
+    [payload?.mapView, congoCenter, congoZoom, defaultTileLayer]
+  );
 
   useEffect(() => {
     if (!exportId) {
