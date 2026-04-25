@@ -161,9 +161,7 @@ export default function MapExport() {
   });
   const [activeLayersData, setActiveLayersData] = useState([]);
   
-  // Vérifier si un ID d'export est fourni (pour compatibilité)
-  const exportId = searchParams.get('id');
-  
+    
   // Charger les données GeoJSON directement
   useEffect(() => {
     const loadGeoData = async () => {
