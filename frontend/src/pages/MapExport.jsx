@@ -283,7 +283,7 @@ export default function MapExport() {
     };
     
     loadGeoData();
-  }, []);
+  }, [layers]);
 
   useEffect(() => {
     const handleAfterPrint = () => {
