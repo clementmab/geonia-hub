@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import ChartPanel from '../components/ChartPanel';
 import MapView, { congoCenter, congoZoom, defaultTileLayer } from '../components/MapView';
 import { buildLayerSymbology } from '../utils/symbology';
@@ -147,7 +147,6 @@ function StyleControls({ layers, onUpdateLayer }) {
 
 export default function MapExport() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [isExporting, setIsExporting] = useState(false);
   const exportRef = useRef(null);
   const mapRef = useRef(null);
