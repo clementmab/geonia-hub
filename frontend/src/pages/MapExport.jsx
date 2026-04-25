@@ -15,8 +15,53 @@ const initializeLayers = () => {
       name: 'Départements du Congo',
       visible: true,
       data: null, // Sera chargé depuis l'API
-      styleMode: 'single',
+      styleMode: 'classified',
+      styleField: 'name',
       color: '#0F6E56',
+      opacity: 0.7,
+      labelEnabled: false,
+      labelField: 'name'
+    },
+    congo_districts: {
+      name: 'Districts du Congo',
+      visible: false,
+      data: null,
+      styleMode: 'classified',
+      styleField: 'name',
+      color: '#FF6B35',
+      opacity: 0.7,
+      labelEnabled: false,
+      labelField: 'name'
+    },
+    arrondissements_brazzaville: {
+      name: 'Arrondissements de Brazzaville',
+      visible: false,
+      data: null,
+      styleMode: 'classified',
+      styleField: 'name',
+      color: '#4ECDC4',
+      opacity: 0.7,
+      labelEnabled: false,
+      labelField: 'name'
+    },
+    arrondissements_pointe_noire: {
+      name: 'Arrondissements de Pointe-Noire',
+      visible: false,
+      data: null,
+      styleMode: 'classified',
+      styleField: 'name',
+      color: '#95E1D3',
+      opacity: 0.7,
+      labelEnabled: false,
+      labelField: 'name'
+    },
+    quartiers_kintele: {
+      name: 'Quartiers Kintélé',
+      visible: false,
+      data: null,
+      styleMode: 'classified',
+      styleField: 'name',
+      color: '#F38181',
       opacity: 0.7,
       labelEnabled: false,
       labelField: 'name'
@@ -169,36 +214,65 @@ export default function MapExport() {
         setIsLoading(true);
         setLoadError(null);
         
-        // Charger les données depuis l'API ou les fichiers locaux
-        const response = await fetch('/data/Departement_Congo.geojson');
+        // Configuration des fichiers à charger
+        const layerFiles = {
+          congo_departements: '/data/Departement_Congo.geojson',
+          congo_districts: '/data/Districts_Congo.geojson',
+          arrondissements_brazzaville: '/data/Arrondissements_Brazzaville.geojson',
+          arrondissements_pointe_noire: '/data/Arrondissements_Pointe_Noire.geojson',
+          quartiers_kintele: '/data/Quartiers_kintele.geojson'
+        };
         
-        if (!response.ok) {
-          throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
-        }
+        const loadedLayers = {};
+        const allActiveData = [];
         
-        const geoData = await response.json();
-        
-        if (!geoData || !geoData.features) {
-          throw new Error('Le fichier GeoJSON est invalide ou ne contient aucune feature');
-        }
-        
-        setLayers(prev => ({
-          ...prev,
-          congo_departements: {
-            ...prev.congo_departements,
-            data: geoData
+        // Charger chaque fichier GeoJSON
+        for (const [layerKey, filePath] of Object.entries(layerFiles)) {
+          try {
+            const response = await fetch(filePath);
+            
+            if (!response.ok) {
+              console.warn(`Impossible de charger ${filePath}: ${response.status}`);
+              continue;
+            }
+            
+            const geoData = await response.json();
+            
+            if (!geoData || !geoData.features) {
+              console.warn(`Fichier GeoJSON invalide: ${filePath}`);
+              continue;
+            }
+            
+            loadedLayers[layerKey] = geoData;
+            
+            // Ajouter aux données actives pour les diagrammes
+            const layerData = geoData.features.map(feature => ({
+              name: feature.properties.name || 'Sans nom',
+              pop: feature.properties.pop || 0,
+              area: feature.properties.area || 0,
+              layerName: layers[layerKey]?.name || layerKey,
+              layerKey
+            }));
+            allActiveData.push(...layerData);
+            
+          } catch (error) {
+            console.warn(`Erreur de chargement de ${filePath}:`, error);
           }
-        }));
+        }
         
-        // Mettre à jour les données actives
-        const activeData = geoData.features.map(feature => ({
-          name: feature.properties.name || 'Sans nom',
-          pop: feature.properties.pop || 0,
-          area: feature.properties.area || 0,
-          layerName: 'Départements du Congo',
-          layerKey: 'congo_departements'
-        }));
-        setActiveLayersData(activeData);
+        // Mettre à jour toutes les couches
+        setLayers(prev => {
+          const updated = { ...prev };
+          Object.keys(loadedLayers).forEach(layerKey => {
+            updated[layerKey] = {
+              ...prev[layerKey],
+              data: loadedLayers[layerKey]
+            };
+          });
+          return updated;
+        });
+        
+        setActiveLayersData(allActiveData);
         
       } catch (error) {
         console.error('Erreur de chargement des données:', error);
