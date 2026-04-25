@@ -79,7 +79,7 @@ export default function MapExport() {
       zoom: congoZoom,
       tileLayer: defaultTileLayer,
     },
-    [payload?.mapView, congoCenter, congoZoom, defaultTileLayer]
+    [payload?.mapView]
   );
 
   useEffect(() => {
