@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { GeoJSON, MapContainer, TileLayer } from 'react-leaflet';
+import { GeoJSON, MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { buildLayerSymbology } from '../utils/symbology';
 import './MapView.css';
@@ -29,16 +29,42 @@ const tileLayers = {
 
 const congoCenter = [-1.9, 15.5];
 const congoZoom = 6;
+const defaultTileLayer = 'osm';
+
+function MapViewSync({ onViewChange }) {
+  useMapEvents({
+    moveend: (event) => {
+      const map = event.target;
+      const center = map.getCenter();
+      onViewChange?.({
+        center: [center.lat, center.lng],
+        zoom: map.getZoom(),
+      });
+    },
+    zoomend: (event) => {
+      const map = event.target;
+      const center = map.getCenter();
+      onViewChange?.({
+        center: [center.lat, center.lng],
+        zoom: map.getZoom(),
+      });
+    },
+  });
+
+  return null;
+}
 
 const MapView = ({
   layers,
   onFeatureClick,
   updateActiveLayersData,
   mapRef,
+  initialView,
+  onViewChange,
   showTileLayerSelector = true,
 }) => {
   const [geoJsonLayers, setGeoJsonLayers] = useState({});
-  const [selectedTileLayer, setSelectedTileLayer] = useState('osm');
+  const [selectedTileLayer, setSelectedTileLayer] = useState(initialView?.tileLayer || defaultTileLayer);
   const leafletMapRef = useRef(null);
 
   useEffect(() => {
@@ -46,6 +72,32 @@ const MapView = ({
       mapRef.current = leafletMapRef.current;
     }
   }, [mapRef]);
+
+  useEffect(() => {
+    if (initialView?.tileLayer && tileLayers[initialView.tileLayer]) {
+      setSelectedTileLayer(initialView.tileLayer);
+    }
+  }, [initialView?.tileLayer]);
+
+  useEffect(() => {
+    const map = leafletMapRef.current;
+    if (!map) {
+      return;
+    }
+
+    const nextCenter = initialView?.center || congoCenter;
+    const nextZoom = typeof initialView?.zoom === 'number' ? initialView.zoom : congoZoom;
+    const currentCenter = map.getCenter();
+    const currentZoom = map.getZoom();
+
+    const hasCenterChanged =
+      Math.abs(currentCenter.lat - nextCenter[0]) > 0.000001 ||
+      Math.abs(currentCenter.lng - nextCenter[1]) > 0.000001;
+
+    if (hasCenterChanged || currentZoom !== nextZoom) {
+      map.setView(nextCenter, nextZoom, { animate: false });
+    }
+  }, [initialView]);
 
   useEffect(() => {
     const nextLayers = {};
@@ -138,7 +190,19 @@ const MapView = ({
           <label>Fond de carte</label>
           <select
             value={selectedTileLayer}
-            onChange={(event) => setSelectedTileLayer(event.target.value)}
+            onChange={(event) => {
+              const nextTileLayer = event.target.value;
+              setSelectedTileLayer(nextTileLayer);
+              const map = leafletMapRef.current;
+              if (map) {
+                const center = map.getCenter();
+                onViewChange?.({
+                  center: [center.lat, center.lng],
+                  zoom: map.getZoom(),
+                  tileLayer: nextTileLayer,
+                });
+              }
+            }}
             className="tile-select"
           >
             {Object.keys(tileLayers).map((key) => (
@@ -160,6 +224,14 @@ const MapView = ({
           attribution={tileLayers[selectedTileLayer].attribution}
           url={tileLayers[selectedTileLayer].url}
           crossOrigin="anonymous"
+        />
+        <MapViewSync
+          onViewChange={(nextView) =>
+            onViewChange?.({
+              ...nextView,
+              tileLayer: selectedTileLayer,
+            })
+          }
         />
 
         {Object.keys(geoJsonLayers).map((layerKey) => (
@@ -184,3 +256,4 @@ const MapView = ({
 };
 
 export default MapView;
+export { congoCenter, congoZoom, defaultTileLayer };

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ChartPanel from '../components/ChartPanel';
-import MapView from '../components/MapView';
+import MapView, { congoCenter, congoZoom, defaultTileLayer } from '../components/MapView';
 import { buildLayerSymbology } from '../utils/symbology';
 import './MapExport.css';
 
@@ -73,6 +73,11 @@ export default function MapExport() {
   const mapRef = useRef(null);
 
   const exportId = searchParams.get('id');
+  const exportMapView = payload?.mapView || {
+    center: congoCenter,
+    zoom: congoZoom,
+    tileLayer: defaultTileLayer,
+  };
 
   useEffect(() => {
     if (!exportId) {
@@ -112,13 +117,17 @@ export default function MapExport() {
   }, [payload]);
 
   useEffect(() => {
-    // Forcer le rafraîchissement de la carte lorsque les couches visibles changent
     if (mapRef.current) {
       setTimeout(() => {
         mapRef.current?.invalidateSize();
+        mapRef.current?.setView(
+          exportMapView.center || congoCenter,
+          typeof exportMapView.zoom === 'number' ? exportMapView.zoom : congoZoom,
+          { animate: false }
+        );
       }, 200);
     }
-  }, [visibleLayers]);
+  }, [visibleLayers, exportMapView]);
 
   const exportAsPng = async () => {
     if (!exportRef.current || isExporting) {
@@ -129,6 +138,11 @@ export default function MapExport() {
 
     try {
       mapRef.current?.invalidateSize();
+      mapRef.current?.setView(
+        exportMapView.center || congoCenter,
+        typeof exportMapView.zoom === 'number' ? exportMapView.zoom : congoZoom,
+        { animate: false }
+      );
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       const canvas = await html2canvas(exportRef.current, {
@@ -144,7 +158,7 @@ export default function MapExport() {
       link.download = `geonia-export-${new Date().toISOString().slice(0, 10)}.png`;
       link.click();
     } catch (error) {
-      console.error("Erreur export PNG:", error);
+      console.error('Erreur export PNG:', error);
       alert("Impossible d'exporter en PNG pour le moment.");
     } finally {
       setIsExporting(false);
@@ -153,6 +167,12 @@ export default function MapExport() {
 
   const exportAsPdf = async () => {
     setIsExporting(true);
+    mapRef.current?.invalidateSize();
+    mapRef.current?.setView(
+      exportMapView.center || congoCenter,
+      typeof exportMapView.zoom === 'number' ? exportMapView.zoom : congoZoom,
+      { animate: false }
+    );
     document.body.classList.add('map-export-printing');
     await new Promise((resolve) => setTimeout(resolve, 300));
     window.print();
@@ -212,6 +232,7 @@ export default function MapExport() {
               onFeatureClick={() => {}}
               updateActiveLayersData={() => {}}
               mapRef={mapRef}
+              initialView={exportMapView}
               showTileLayerSelector={false}
             />
           </div>

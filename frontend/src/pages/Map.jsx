@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ChartPanel from '../components/ChartPanel';
 import LayerControl from '../components/LayerControl';
-import MapView from '../components/MapView';
+import MapView, { congoCenter, congoZoom, defaultTileLayer } from '../components/MapView';
 import { createInitialLayerConfig } from '../constants/mapLayers';
 import './Map.css';
 
@@ -11,6 +11,11 @@ const Map = () => {
   const [layers, setLayers] = useState(() => createInitialLayerConfig());
   const [selectedLayer, setSelectedLayer] = useState(null);
   const [activeLayersData, setActiveLayersData] = useState([]);
+  const [mapView, setMapView] = useState({
+    center: congoCenter,
+    zoom: congoZoom,
+    tileLayer: defaultTileLayer,
+  });
   const mapRef = useRef(null);
 
   useEffect(() => {
@@ -86,6 +91,7 @@ const Map = () => {
       createdAt: new Date().toISOString(),
       layers,
       activeLayersData,
+      mapView,
     };
 
     sessionStorage.setItem(exportId, JSON.stringify(exportPayload));
@@ -112,6 +118,8 @@ const Map = () => {
             onFeatureClick={handleFeatureClick}
             updateActiveLayersData={setActiveLayersData}
             mapRef={mapRef}
+            initialView={mapView}
+            onViewChange={(nextView) => setMapView((prev) => ({ ...prev, ...nextView }))}
           />
         </div>
 
