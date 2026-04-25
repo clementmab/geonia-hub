@@ -159,15 +159,28 @@ export default function MapExport() {
     tileLayer: defaultTileLayer
   });
   const [activeLayersData, setActiveLayersData] = useState([]);
-  
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
     
   // Charger les données GeoJSON directement
   useEffect(() => {
     const loadGeoData = async () => {
       try {
+        setIsLoading(true);
+        setLoadError(null);
+        
         // Charger les données depuis l'API ou les fichiers locaux
-        const response = await fetch('/data/conogo_departements.geojson');
+        const response = await fetch('/data/Departement_Congo.geojson');
+        
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const geoData = await response.json();
+        
+        if (!geoData || !geoData.features) {
+          throw new Error('Le fichier GeoJSON est invalide ou ne contient aucune feature');
+        }
         
         setLayers(prev => ({
           ...prev,
@@ -179,7 +192,7 @@ export default function MapExport() {
         
         // Mettre à jour les données actives
         const activeData = geoData.features.map(feature => ({
-          name: feature.properties.name,
+          name: feature.properties.name || 'Sans nom',
           pop: feature.properties.pop || 0,
           area: feature.properties.area || 0,
           layerName: 'Départements du Congo',
@@ -189,6 +202,9 @@ export default function MapExport() {
         
       } catch (error) {
         console.error('Erreur de chargement des données:', error);
+        setLoadError(error.message);
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -290,12 +306,37 @@ export default function MapExport() {
     window.print();
   };
 
-  if (!Object.keys(visibleLayers).length) {
+  if (isLoading) {
     return (
       <div className="map-export-page map-export-page--empty">
         <div className="export-card export-empty">
           <h2>Chargement des données...</h2>
           <p>Veuillez patienter pendant le chargement des couches géographiques.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="map-export-page map-export-page--empty">
+        <div className="export-card export-empty">
+          <h2>Erreur de chargement</h2>
+          <p>Impossible de charger les données géographiques : {loadError}</p>
+          <button className="export-action export-action--primary" onClick={() => window.location.reload()}>
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!Object.keys(visibleLayers).length) {
+    return (
+      <div className="map-export-page map-export-page--empty">
+        <div className="export-card export-empty">
+          <h2>Aucune donnée disponible</h2>
+          <p>Les couches géographiques ne contiennent aucune donnée à afficher.</p>
         </div>
       </div>
     );
