@@ -211,6 +211,7 @@ export default function MapExport() {
   useEffect(() => {
     const loadGeoData = async () => {
       try {
+        console.log('🚀 Début du chargement des données GeoJSON...');
         setIsLoading(true);
         setLoadError(null);
         
@@ -229,20 +230,22 @@ export default function MapExport() {
         // Charger chaque fichier GeoJSON
         for (const [layerKey, filePath] of Object.entries(layerFiles)) {
           try {
+            console.log(`📁 Chargement de ${filePath}...`);
             const response = await fetch(filePath);
             
             if (!response.ok) {
-              console.warn(`Impossible de charger ${filePath}: ${response.status}`);
+              console.warn(`❌ Impossible de charger ${filePath}: ${response.status}`);
               continue;
             }
             
             const geoData = await response.json();
             
             if (!geoData || !geoData.features) {
-              console.warn(`Fichier GeoJSON invalide: ${filePath}`);
+              console.warn(`❌ Fichier GeoJSON invalide: ${filePath}`);
               continue;
             }
             
+            console.log(`✅ ${filePath} chargé avec ${geoData.features.length} features`);
             loadedLayers[layerKey] = geoData;
             
             // Ajouter aux données actives pour les diagrammes
@@ -272,12 +275,14 @@ export default function MapExport() {
           return updated;
         });
         
+        console.log(`📊 Données actives préparées: ${allActiveData.length} entités`);
         setActiveLayersData(allActiveData);
         
       } catch (error) {
-        console.error('Erreur de chargement des données:', error);
+        console.error('❌ Erreur de chargement des données:', error);
         setLoadError(error.message);
       } finally {
+        console.log('🏁 Fin du chargement, setIsLoading(false)');
         setIsLoading(false);
       }
     };
