@@ -3,7 +3,7 @@ import L from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 import ChartPanel from '../components/ChartPanel';
 import MapView, { congoCenter, congoZoom, defaultTileLayer } from '../components/MapView';
-import { buildLayerSymbology } from '../utils/symbology';
+import { buildLayerSymbology, getLayerFields } from '../utils/symbology';
 import './MapExport.css';
 
 const EXPORT_LAYER_CATALOG = [
@@ -472,6 +472,8 @@ function ExportConfigurator({
   selectedFeatureName,
   searchTerm,
   featureOptions,
+  styleFieldOptions,
+  styleModeOptions,
   selectedLayer,
   onLayerChange,
   onFeatureChange,
@@ -522,6 +524,36 @@ function ExportConfigurator({
             {featureOptions.map((featureName) => (
               <option key={featureName} value={featureName}>
                 {featureName}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="export-field">
+          <label htmlFor="export-style-mode">Style de coloration</label>
+          <select
+            id="export-style-mode"
+            value={selectedLayer.styleMode}
+            onChange={(event) => onLayerStyleChange(selectedLayerKey, 'styleMode', event.target.value)}
+          >
+            {styleModeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="export-field">
+          <label htmlFor="export-style-field">Champ de style</label>
+          <select
+            id="export-style-field"
+            value={selectedLayer.styleField || ''}
+            onChange={(event) => onLayerStyleChange(selectedLayerKey, 'styleField', event.target.value)}
+          >
+            {styleFieldOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
@@ -699,8 +731,59 @@ export default function MapExport() {
     return layer?.data || null;
   }, [selectedLayerKey, visibleLayers]);
 
+  const selectedLayerFields = useMemo(() => getLayerFields(selectedLayer), [selectedLayer]);
+
+  const styleModeOptions = useMemo(() => ([
+    { value: 'single', label: 'Couleur unique' },
+    { value: 'categorized', label: 'Categoriser par nom' },
+    { value: 'graduated', label: 'Graduation par superficie' },
+  ]), []);
+
+  const styleFieldOptions = useMemo(() => {
+    if (selectedLayer.styleMode === 'graduated') {
+      const numericFields = selectedLayerFields.numericFields;
+      const preferredField = numericFields.includes('area') ? 'area' : numericFields[0];
+      const orderedFields = preferredField
+        ? [preferredField, ...numericFields.filter((field) => field !== preferredField)]
+        : numericFields;
+
+      return (orderedFields.length ? orderedFields : [preferredField].filter(Boolean)).map((field) => ({
+        value: field,
+        label: field === 'area' ? 'Superficie' : field === 'pop' ? 'Population' : field,
+      }));
+    }
+
+    const allFields = selectedLayerFields.allFields;
+    const preferredField = allFields.includes('name') ? 'name' : allFields[0];
+    const orderedFields = preferredField
+      ? [preferredField, ...allFields.filter((field) => field !== preferredField)]
+      : allFields;
+
+    return (orderedFields.length ? orderedFields : [preferredField].filter(Boolean)).map((field) => ({
+      value: field,
+      label: field === 'name' ? 'Nom' : field === 'area' ? 'Superficie' : field === 'pop' ? 'Population' : field,
+    }));
+  }, [selectedLayer.styleMode, selectedLayerFields]);
+
   const scopeName = selectedFeatureName || searchTerm || selectedLayer.scope;
   const featureCount = focusedFeatures.length;
+
+  useEffect(() => {
+    if (!styleFieldOptions.length) {
+      return;
+    }
+
+    const fieldValues = styleFieldOptions.map((option) => option.value);
+    if (!fieldValues.includes(selectedLayer.styleField)) {
+      setLayers((prev) => ({
+        ...prev,
+        [selectedLayerKey]: {
+          ...prev[selectedLayerKey],
+          styleField: fieldValues[0],
+        },
+      }));
+    }
+  }, [selectedLayer.styleField, selectedLayerKey, styleFieldOptions]);
 
   useEffect(() => {
     if (mapRef.current) {
@@ -825,6 +908,8 @@ export default function MapExport() {
           selectedFeatureName={selectedFeatureName}
           searchTerm={searchTerm}
           featureOptions={filteredFeatureNames}
+          styleFieldOptions={styleFieldOptions}
+          styleModeOptions={styleModeOptions}
           selectedLayer={selectedLayer}
           onLayerChange={handleLayerChange}
           onFeatureChange={setSelectedFeatureName}
