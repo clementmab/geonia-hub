@@ -736,7 +736,10 @@ export default function MapExport() {
     try {
       mapRef.current?.invalidateSize();
       await new Promise((resolve) => setTimeout(resolve, 350));
-      const mapElement = exportRef.current?.querySelector('.export-card--map .map-view');
+      const mapElement =
+        mapRef.current?.getContainer?.() ||
+        exportRef.current?.querySelector('.export-card--map .leaflet-container') ||
+        exportRef.current?.querySelector('.export-card--map .map-view');
       const chartCanvas = chartRef.current?.querySelector('canvas') || null;
       await exportCompositionAsPng({
         fileName: `geonia-export-${selectedLayerKey.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.png`,

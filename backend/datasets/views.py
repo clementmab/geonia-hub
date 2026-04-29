@@ -65,8 +65,33 @@ class DatasetViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Admin voit tout (pending + approved), visiteur voit seulement approved
         if self.request.user and self.request.user.is_staff:
-            return Dataset.objects.all()
-        return Dataset.objects.filter(status='approved')
+            queryset = Dataset.objects.all()
+        else:
+            queryset = Dataset.objects.filter(status='approved')
+
+        def get_multi_values(param_name):
+            values = []
+            for raw_value in self.request.query_params.getlist(param_name):
+                if raw_value is None:
+                    continue
+                values.extend(
+                    item.strip() for item in str(raw_value).split(',') if item and item.strip()
+                )
+            return values
+
+        format_values = get_multi_values('format')
+        if format_values:
+            queryset = queryset.filter(format__in=format_values)
+
+        category_values = get_multi_values('category')
+        if category_values:
+            queryset = queryset.filter(category_id__in=category_values)
+
+        department_values = get_multi_values('department')
+        if department_values:
+            queryset = queryset.filter(department_id__in=department_values)
+
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'list':
