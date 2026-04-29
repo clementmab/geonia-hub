@@ -111,8 +111,8 @@
 .export-card--map {
   padding: 0;
   overflow: hidden;
-  min-height: 680px;
-  height: 680px;
+  min-height: 610px;
+  height: 610px;
 }
 
 .export-card--map .map-view {
@@ -282,7 +282,7 @@
 }
 
 .export-card--chart {
-  max-height: 250px;
+  max-height: 220px;
   overflow: hidden;
 }
 
@@ -330,13 +330,17 @@ body.map-export-printing .map-export-sheet {
     display: none;
   }
 
+  .export-card--configurator {
+    display: none;
+  }
+
   .export-configurator {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .map-export-grid {
-    grid-template-columns: minmax(0, 1.75fr) minmax(230px, 0.62fr);
-    gap: 10px;
+    grid-template-columns: minmax(0, 1.7fr) minmax(220px, 0.6fr);
+    gap: 8px;
   }
 
   .export-card,
@@ -349,12 +353,8 @@ body.map-export-printing .map-export-sheet {
   }
 
   .export-card--map {
-    min-height: 470px;
-    height: 470px;
-  }
-
-  .export-card--chart {
-    display: none;
+    min-height: 430px;
+    height: 430px;
   }
 
   .map-export-sheet__header p {
@@ -384,7 +384,29 @@ body.map-export-printing .map-export-sheet {
   }
 
   .export-legend__item {
-    font-size: 0.72rem;
+    font-size: 0.69rem;
+  }
+
+  .export-card--chart {
+    max-height: 170px;
+    padding: 8px;
+  }
+
+  .export-card--chart .chart-panel {
+    padding: 0.5rem;
+    box-shadow: none;
+  }
+
+  .export-card--chart .chart-panel h3,
+  .export-card--chart .chart-controls {
+    display: none;
+  }
+
+  .export-card--chart .chart-container {
+    min-height: 120px;
+    height: 120px !important;
+    margin-bottom: 0;
+    padding: 0.35rem;
   }
 }
 

@@ -98,75 +98,225 @@ function collectStyleText() {
   return chunks.join('\n');
 }
 
-async function exportNodeAsPng(node, fileName) {
-  if (!node) {
-    throw new Error('Zone exportable introuvable');
+function loadImageFromUrl(url) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Impossible de charger une ressource d'export"));
+    image.src = url;
+  });
+}
+
+function drawRoundedRect(context, x, y, width, height, radius, fillStyle, strokeStyle = null) {
+  context.beginPath();
+  context.moveTo(x + radius, y);
+  context.lineTo(x + width - radius, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + radius);
+  context.lineTo(x + width, y + height - radius);
+  context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  context.lineTo(x + radius, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - radius);
+  context.lineTo(x, y + radius);
+  context.quadraticCurveTo(x, y, x + radius, y);
+  context.closePath();
+  context.fillStyle = fillStyle;
+  context.fill();
+
+  if (strokeStyle) {
+    context.strokeStyle = strokeStyle;
+    context.stroke();
+  }
+}
+
+async function renderLeafletMapSnapshot(mapElement, width, height) {
+  if (!mapElement) {
+    throw new Error('Carte introuvable');
   }
 
-  const rect = node.getBoundingClientRect();
-  const clone = node.cloneNode(true);
-  const serializedStyles = collectStyleText();
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d');
 
-  clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-  clone.style.width = `${Math.ceil(rect.width)}px`;
-  clone.style.height = `${Math.ceil(rect.height)}px`;
-  clone.style.margin = '0';
+  if (!context) {
+    throw new Error('Contexte canvas indisponible');
+  }
 
-  const wrapper = document.createElement('div');
-  wrapper.appendChild(clone);
+  context.fillStyle = '#dce8ee';
+  context.fillRect(0, 0, width, height);
 
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(rect.width)}" height="${Math.ceil(rect.height)}">
-      <foreignObject width="100%" height="100%">
-        <div xmlns="http://www.w3.org/1999/xhtml">
-          <style>${serializedStyles}</style>
-          ${wrapper.innerHTML}
-        </div>
-      </foreignObject>
-    </svg>
-  `;
+  const mapRect = mapElement.getBoundingClientRect();
+  const tileImages = Array.from(mapElement.querySelectorAll('.leaflet-tile'));
 
-  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-
-  try {
-    const image = await new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error("Impossible de generer l'image exportee"));
-      img.src = url;
-    });
-
-    const canvas = document.createElement('canvas');
-    const scale = Math.max(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.ceil(rect.width * scale);
-    canvas.height = Math.ceil(rect.height * scale);
-
-    const context = canvas.getContext('2d');
-    if (!context) {
-      throw new Error('Contexte canvas indisponible');
+  for (const tile of tileImages) {
+    if (!(tile instanceof HTMLImageElement) || !tile.complete || !tile.naturalWidth) {
+      continue;
     }
 
-    context.scale(scale, scale);
-    context.fillStyle = '#ffffff';
-    context.fillRect(0, 0, rect.width, rect.height);
-    context.drawImage(image, 0, 0, rect.width, rect.height);
+    const rect = tile.getBoundingClientRect();
+    const x = ((rect.left - mapRect.left) / mapRect.width) * width;
+    const y = ((rect.top - mapRect.top) / mapRect.height) * height;
+    const tileWidth = (rect.width / mapRect.width) * width;
+    const tileHeight = (rect.height / mapRect.height) * height;
 
-    const link = document.createElement('a');
-    link.href = canvas.toDataURL('image/png');
-    link.download = fileName;
-    link.click();
-  } finally {
-    URL.revokeObjectURL(url);
+    try {
+      context.drawImage(tile, x, y, tileWidth, tileHeight);
+    } catch (error) {
+      // Continue with the rest of the map when one tile fails.
+    }
   }
+
+  const overlaySvg = mapElement.querySelector('.leaflet-overlay-pane svg');
+  if (overlaySvg) {
+    const svgMarkup = new XMLSerializer().serializeToString(overlaySvg);
+    const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+
+    try {
+      const overlayImage = await loadImageFromUrl(svgUrl);
+      context.drawImage(overlayImage, 0, 0, width, height);
+    } finally {
+      URL.revokeObjectURL(svgUrl);
+    }
+  }
+
+  const labels = Array.from(mapElement.querySelectorAll('.leaflet-tooltip.map-feature-label'));
+  context.textBaseline = 'middle';
+  context.font = '600 12px Arial';
+
+  labels.forEach((labelNode) => {
+    const rect = labelNode.getBoundingClientRect();
+    const x = ((rect.left - mapRect.left) / mapRect.width) * width;
+    const y = ((rect.top - mapRect.top) / mapRect.height) * height;
+    const labelWidth = (rect.width / mapRect.width) * width;
+    const labelHeight = (rect.height / mapRect.height) * height;
+
+    drawRoundedRect(context, x, y, labelWidth, labelHeight, labelHeight / 2, 'rgba(255,255,255,0.92)', 'rgba(15,110,86,0.18)');
+    context.fillStyle = '#0f1720';
+    context.fillText(labelNode.textContent || '', x + 8, y + labelHeight / 2 + 0.5);
+  });
+
+  return canvas;
+}
+
+async function exportCompositionAsPng({
+  fileName,
+  title,
+  subtitle,
+  levelName,
+  scopeName,
+  featureCount,
+  legendLayers,
+  mapElement,
+  chartCanvas,
+}) {
+  const width = 1600;
+  const height = 920;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d');
+
+  if (!context) {
+    throw new Error('Contexte canvas indisponible');
+  }
+
+  context.fillStyle = '#f4f8f7';
+  context.fillRect(0, 0, width, height);
+
+  drawRoundedRect(context, 28, 24, width - 56, height - 48, 24, '#ffffff');
+  drawRoundedRect(context, 28, 24, width - 56, 96, 24, '#16324a');
+  context.fillStyle = '#ffffff';
+  context.font = '700 34px Arial';
+  context.fillText(title, 54, 64);
+  context.font = '400 18px Arial';
+  context.fillStyle = 'rgba(255,255,255,0.86)';
+  context.fillText(subtitle, 54, 94);
+
+  const summaryTop = 138;
+  const summaryWidth = 250;
+  const summaryGap = 16;
+  const summaryItems = [
+    ['Niveau', levelName],
+    ['Zone', scopeName],
+    ['Entites', String(featureCount)],
+  ];
+
+  summaryItems.forEach(([label, value], index) => {
+    const x = 40 + index * (summaryWidth + summaryGap);
+    drawRoundedRect(context, x, summaryTop, summaryWidth, 76, 16, '#f6faf9', '#dbe6eb');
+    context.fillStyle = '#5d6c79';
+    context.font = '700 14px Arial';
+    context.fillText(label.toUpperCase(), x + 18, summaryTop + 24);
+    context.fillStyle = '#16324a';
+    context.font = '700 23px Arial';
+    context.fillText(value, x + 18, summaryTop + 54);
+  });
+
+  const mapX = 40;
+  const mapY = 232;
+  const mapWidth = 980;
+  const mapHeight = 620;
+  drawRoundedRect(context, mapX, mapY, mapWidth, mapHeight, 18, '#dce8ee', '#dbe6eb');
+
+  const mapCanvas = await renderLeafletMapSnapshot(mapElement, mapWidth, mapHeight);
+  context.drawImage(mapCanvas, mapX, mapY, mapWidth, mapHeight);
+
+  const sideX = 1040;
+  const sideWidth = 520;
+  drawRoundedRect(context, sideX, mapY, sideWidth, 330, 18, '#ffffff', '#dbe6eb');
+  context.fillStyle = '#16324a';
+  context.font = '700 24px Arial';
+  context.fillText('Legende', sideX + 20, mapY + 34);
+
+  let legendY = mapY + 68;
+  Object.values(legendLayers).forEach((layer) => {
+    const symbology = buildLayerSymbology(layer);
+    context.fillStyle = '#16324a';
+    context.font = '700 18px Arial';
+    context.fillText(layer.name, sideX + 20, legendY);
+    legendY += 18;
+    context.fillStyle = '#5d6c79';
+    context.font = '400 13px Arial';
+    context.fillText(layer.styleMode === 'single' ? 'Couleur unique' : `${layer.styleMode} - ${symbology.field || 'champ'}`, sideX + 20, legendY);
+    legendY += 18;
+
+    symbology.legendItems.slice(0, 10).forEach((item) => {
+      drawRoundedRect(context, sideX + 20, legendY - 10, 14, 14, 3, item.color, 'rgba(0,0,0,0.08)');
+      context.fillStyle = '#16324a';
+      context.font = '400 13px Arial';
+      context.fillText(String(item.label), sideX + 42, legendY + 1);
+      legendY += 22;
+    });
+
+    legendY += 8;
+  });
+
+  drawRoundedRect(context, sideX, mapY + 348, sideWidth, 504, 18, '#ffffff', '#dbe6eb');
+  context.fillStyle = '#16324a';
+  context.font = '700 24px Arial';
+  context.fillText('Diagramme', sideX + 20, mapY + 382);
+
+  if (chartCanvas) {
+    context.drawImage(chartCanvas, sideX + 18, mapY + 398, sideWidth - 36, 430);
+  } else {
+    context.fillStyle = '#5d6c79';
+    context.font = '400 18px Arial';
+    context.fillText('Aucune visualisation disponible', sideX + 20, mapY + 430);
+  }
+
+  const link = document.createElement('a');
+  link.href = canvas.toDataURL('image/png');
+  link.download = fileName;
+  link.click();
 }
 
 function ExportLegend({ layers }) {
   const visibleLayers = Object.entries(layers).filter(([, layer]) => layer.visible && layer.data);
 
   return (
-    <section className="export-card">
+    <section className="export-card export-card--configurator">
       <div className="export-card__header">
         <h3>Legende</h3>
       </div>
@@ -318,6 +468,7 @@ function ExportConfigurator({
 export default function MapExport() {
   const navigate = useNavigate();
   const exportRef = useRef(null);
+  const chartRef = useRef(null);
   const mapRef = useRef(null);
   const [layers, setLayers] = useState(() => createInitialLayers());
   const [selectedLayerKey, setSelectedLayerKey] = useState('Departement_Congo');
@@ -483,10 +634,19 @@ export default function MapExport() {
     try {
       mapRef.current?.invalidateSize();
       await new Promise((resolve) => setTimeout(resolve, 350));
-      await exportNodeAsPng(
-        exportRef.current,
-        `geonia-export-${selectedLayerKey.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.png`
-      );
+      const mapElement = exportRef.current?.querySelector('.export-card--map .map-view');
+      const chartCanvas = chartRef.current?.querySelector('canvas') || null;
+      await exportCompositionAsPng({
+        fileName: `geonia-export-${selectedLayerKey.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.png`,
+        title: 'Export cartographique GeoNia',
+        subtitle: 'Composition optimisee pour partage rapide',
+        levelName: selectedLayer.name,
+        scopeName,
+        featureCount,
+        legendLayers: visibleLayers,
+        mapElement,
+        chartCanvas,
+      });
     } catch (error) {
       alert(error.message || "Impossible d'exporter l'image pour le moment.");
     } finally {
@@ -594,7 +754,7 @@ export default function MapExport() {
 
           <div className="map-export-side">
             <ExportLegend layers={visibleLayers} />
-            <section className="export-card export-card--chart">
+            <section className="export-card export-card--chart" ref={chartRef}>
               <div className="export-card__header">
                 <h3>Lecture rapide</h3>
               </div>
