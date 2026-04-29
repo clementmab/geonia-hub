@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import L from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 import ChartPanel from '../components/ChartPanel';
 import MapView, { congoCenter, congoZoom, defaultTileLayer } from '../components/MapView';
@@ -114,8 +115,193 @@ function drawRoundedRect(context, x, y, width, height, radius, fillStyle, stroke
   }
 }
 
-async function renderLeafletMapSnapshot(mapElement, width, height) {
-  if (!mapElement) {
+function getCanvasLabelPoint(map, feature) {
+  const geometry = feature?.geometry;
+  if (!geometry) {
+    return null;
+  }
+
+  if (geometry.type === 'Point' && Array.isArray(geometry.coordinates)) {
+    const [lng, lat] = geometry.coordinates;
+    return map.latLngToContainerPoint([lat, lng]);
+  }
+
+  if (geometry.type === 'MultiPoint' && Array.isArray(geometry.coordinates?.[0])) {
+    const [lng, lat] = geometry.coordinates[0];
+    return map.latLngToContainerPoint([lat, lng]);
+  }
+
+  const bounds = L.geoJSON(feature).getBounds();
+  if (!bounds.isValid()) {
+    return null;
+  }
+
+  return map.latLngToContainerPoint(bounds.getCenter());
+}
+
+function traceGeometryPath(context, geometry, projectPoint) {
+  if (!geometry) {
+    return false;
+  }
+
+  const moveAlongRing = (ring) => {
+    ring.forEach((coordinate, index) => {
+      const point = projectPoint(coordinate);
+      if (index === 0) {
+        context.moveTo(point.x, point.y);
+      } else {
+        context.lineTo(point.x, point.y);
+      }
+    });
+    context.closePath();
+  };
+
+  context.beginPath();
+
+  if (geometry.type === 'Polygon') {
+    geometry.coordinates.forEach(moveAlongRing);
+    return true;
+  }
+
+  if (geometry.type === 'MultiPolygon') {
+    geometry.coordinates.forEach((polygon) => polygon.forEach(moveAlongRing));
+    return true;
+  }
+
+  if (geometry.type === 'LineString') {
+    geometry.coordinates.forEach((coordinate, index) => {
+      const point = projectPoint(coordinate);
+      if (index === 0) {
+        context.moveTo(point.x, point.y);
+      } else {
+        context.lineTo(point.x, point.y);
+      }
+    });
+    return true;
+  }
+
+  if (geometry.type === 'MultiLineString') {
+    geometry.coordinates.forEach((line) => {
+      line.forEach((coordinate, index) => {
+        const point = projectPoint(coordinate);
+        if (index === 0) {
+          context.moveTo(point.x, point.y);
+        } else {
+          context.lineTo(point.x, point.y);
+        }
+      });
+    });
+    return true;
+  }
+
+  if (geometry.type === 'Point') {
+    const point = projectPoint(geometry.coordinates);
+    context.arc(point.x, point.y, 6, 0, Math.PI * 2);
+    return true;
+  }
+
+  if (geometry.type === 'MultiPoint') {
+    geometry.coordinates.forEach((coordinate) => {
+      const point = projectPoint(coordinate);
+      context.moveTo(point.x + 6, point.y);
+      context.arc(point.x, point.y, 6, 0, Math.PI * 2);
+    });
+    return true;
+  }
+
+  return false;
+}
+
+function drawGeoJsonLayersOnCanvas(context, map, mapElement, width, height, layers) {
+  const sourceWidth = mapElement.clientWidth || mapElement.getBoundingClientRect().width || width;
+  const sourceHeight = mapElement.clientHeight || mapElement.getBoundingClientRect().height || height;
+  const scaleX = width / sourceWidth;
+  const scaleY = height / sourceHeight;
+  const lineScale = (scaleX + scaleY) / 2;
+
+  const projectPoint = ([lng, lat]) => {
+    const containerPoint = map.latLngToContainerPoint([lat, lng]);
+    return {
+      x: containerPoint.x * scaleX,
+      y: containerPoint.y * scaleY,
+    };
+  };
+
+  Object.values(layers).forEach((layer) => {
+    if (!layer?.data?.features?.length) {
+      return;
+    }
+
+    const symbology = buildLayerSymbology(layer);
+
+    layer.data.features.forEach((feature) => {
+      const style = symbology.getFeatureStyle(feature);
+      const geometryType = feature?.geometry?.type;
+      const hasPath = traceGeometryPath(context, feature?.geometry, projectPoint);
+
+      if (!hasPath) {
+        return;
+      }
+
+      context.fillStyle = style.fillColor || layer.color || '#45B7D1';
+      context.strokeStyle = style.color || '#ffffff';
+      context.lineWidth = Math.max((style.weight || 2) * lineScale, 1);
+      context.globalAlpha = typeof style.fillOpacity === 'number' ? style.fillOpacity : 0.72;
+
+      if (geometryType === 'Polygon' || geometryType === 'MultiPolygon') {
+        context.fill('evenodd');
+      } else if (geometryType === 'Point' || geometryType === 'MultiPoint') {
+        context.fill();
+      }
+
+      context.globalAlpha = typeof style.opacity === 'number' ? style.opacity : 1;
+      context.stroke();
+      context.globalAlpha = 1;
+
+      if (!layer.labelEnabled) {
+        return;
+      }
+
+      const labelField = layer.labelField || 'name';
+      const labelValue = feature?.properties?.[labelField];
+      if (labelValue === undefined || labelValue === null || labelValue === '') {
+        return;
+      }
+
+      const labelPoint = getCanvasLabelPoint(map, feature);
+      if (!labelPoint) {
+        return;
+      }
+
+      const x = labelPoint.x * scaleX;
+      const y = labelPoint.y * scaleY;
+      const text = String(labelValue);
+      context.font = '600 12px Arial';
+      const textWidth = context.measureText(text).width;
+      const labelHeight = 22;
+      const labelWidth = textWidth + 16;
+
+      drawRoundedRect(
+        context,
+        x - labelWidth / 2,
+        y - labelHeight / 2,
+        labelWidth,
+        labelHeight,
+        labelHeight / 2,
+        'rgba(255,255,255,0.92)',
+        'rgba(15,110,86,0.18)'
+      );
+      context.fillStyle = '#0f1720';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(text, x, y + 0.5);
+      context.textAlign = 'start';
+    });
+  });
+}
+
+async function renderLeafletMapSnapshot(map, mapElement, width, height, layers) {
+  if (!mapElement || !map) {
     throw new Error('Carte introuvable');
   }
 
@@ -152,35 +338,7 @@ async function renderLeafletMapSnapshot(mapElement, width, height) {
     }
   }
 
-  const overlaySvg = mapElement.querySelector('.leaflet-overlay-pane svg');
-  if (overlaySvg) {
-    const svgMarkup = new XMLSerializer().serializeToString(overlaySvg);
-    const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
-    const svgUrl = URL.createObjectURL(svgBlob);
-
-    try {
-      const overlayImage = await loadImageFromUrl(svgUrl);
-      context.drawImage(overlayImage, 0, 0, width, height);
-    } finally {
-      URL.revokeObjectURL(svgUrl);
-    }
-  }
-
-  const labels = Array.from(mapElement.querySelectorAll('.leaflet-tooltip.map-feature-label'));
-  context.textBaseline = 'middle';
-  context.font = '600 12px Arial';
-
-  labels.forEach((labelNode) => {
-    const rect = labelNode.getBoundingClientRect();
-    const x = ((rect.left - mapRect.left) / mapRect.width) * width;
-    const y = ((rect.top - mapRect.top) / mapRect.height) * height;
-    const labelWidth = (rect.width / mapRect.width) * width;
-    const labelHeight = (rect.height / mapRect.height) * height;
-
-    drawRoundedRect(context, x, y, labelWidth, labelHeight, labelHeight / 2, 'rgba(255,255,255,0.92)', 'rgba(15,110,86,0.18)');
-    context.fillStyle = '#0f1720';
-    context.fillText(labelNode.textContent || '', x + 8, y + labelHeight / 2 + 0.5);
-  });
+  drawGeoJsonLayersOnCanvas(context, map, mapElement, width, height, layers);
 
   return canvas;
 }
@@ -188,6 +346,7 @@ async function renderLeafletMapSnapshot(mapElement, width, height) {
 async function exportCompositionAsPng({
   fileName,
   legendLayers,
+  mapInstance,
   mapElement,
   chartCanvas,
 }) {
@@ -213,7 +372,7 @@ async function exportCompositionAsPng({
   const mapHeight = 590;
   drawRoundedRect(context, mapX, mapY, mapWidth, mapHeight, 18, '#dce8ee', '#dbe6eb');
 
-  const mapCanvas = await renderLeafletMapSnapshot(mapElement, mapWidth, mapHeight);
+  const mapCanvas = await renderLeafletMapSnapshot(mapInstance, mapElement, mapWidth, mapHeight, legendLayers);
   context.drawImage(mapCanvas, mapX, mapY, mapWidth, mapHeight);
 
   const sideX = 1040;
@@ -592,6 +751,7 @@ export default function MapExport() {
       await exportCompositionAsPng({
         fileName: `geonia-export-${selectedLayerKey.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.png`,
         legendLayers: visibleLayers,
+        mapInstance: mapRef.current,
         mapElement,
         chartCanvas,
       });
