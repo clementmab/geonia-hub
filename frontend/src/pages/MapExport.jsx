@@ -84,16 +84,6 @@ function sortFeaturesByName(features) {
   });
 }
 
-function loadImageFromUrl(url) {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.crossOrigin = 'anonymous';
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("Impossible de charger une ressource d'export"));
-    image.src = url;
-  });
-}
-
 function drawRoundedRect(context, x, y, width, height, radius, fillStyle, strokeStyle = null) {
   context.beginPath();
   context.moveTo(x + radius, y);
@@ -333,7 +323,7 @@ async function renderLeafletMapSnapshot(map, mapElement, width, height, layers) 
 
     try {
       context.drawImage(tile, x, y, tileWidth, tileHeight);
-    } catch (error) {
+    } catch {
       // Continue with the rest of the map when one tile fails.
     }
   }
