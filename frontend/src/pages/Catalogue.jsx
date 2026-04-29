@@ -204,9 +204,9 @@ export default function Catalogue() {
   // ✅ Construit les params proprement — pas de valeurs vides
   const params = {
     ...(search   && { search }),
-    ...(formats.length  && { format:     formats.join(',') }),
-    ...(depts.length    && { department: depts.join(',') }),
-    ...(cats.length     && { category:   cats.join(',') }),
+    ...(formats.length  && { format: formats }),
+    ...(depts.length    && { department: depts }),
+    ...(cats.length     && { category: cats }),
     ordering,
     page,
   };

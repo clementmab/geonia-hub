@@ -24,8 +24,32 @@ export function toDirectDownloadUrl(url) {
 
 
 // ✅ getDatasets retourne l'OBJET complet { count, results, next, previous }
-export const getDatasets = (params) =>
-  client.get('/datasets/', { params }).then((r) => r.data);
+export const getDatasets = (params = {}) =>
+  client.get('/datasets/', {
+    params,
+    paramsSerializer: (rawParams) => {
+      const searchParams = new URLSearchParams();
+
+      Object.entries(rawParams).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === '') {
+          return;
+        }
+
+        if (Array.isArray(value)) {
+          value.forEach((item) => {
+            if (item !== undefined && item !== null && item !== '') {
+              searchParams.append(key, item);
+            }
+          });
+          return;
+        }
+
+        searchParams.append(key, value);
+      });
+
+      return searchParams.toString();
+    },
+  }).then((r) => r.data);
 
 export const getDataset = (id) =>
   client.get(`/datasets/${id}/`).then((r) => r.data);

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import { GeoJSON, MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
+import { GeoJSON, MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { buildLayerSymbology } from '../utils/symbology';
 import './MapView.css';
@@ -32,7 +32,15 @@ const congoCenter = [-1.9, 15.5];
 const congoZoom = 6;
 const defaultTileLayer = 'osm';
 
-function MapViewSync({ onViewChange }) {
+function MapViewSync({ onViewChange, mapRef }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (mapRef) {
+      mapRef.current = map;
+    }
+  }, [map, mapRef]);
+
   useMapEvents({
     moveend: (event) => {
       const map = event.target;
@@ -68,12 +76,6 @@ const MapView = ({
   const [geoJsonLayers, setGeoJsonLayers] = useState({});
   const [selectedTileLayer, setSelectedTileLayer] = useState(initialView?.tileLayer || defaultTileLayer);
   const leafletMapRef = useRef(null);
-
-  useEffect(() => {
-    if (mapRef && leafletMapRef.current) {
-      mapRef.current = leafletMapRef.current;
-    }
-  }, [mapRef]);
 
   useEffect(() => {
     if (initialView?.tileLayer && tileLayers[initialView.tileLayer]) {
@@ -248,6 +250,7 @@ const MapView = ({
           crossOrigin="anonymous"
         />
         <MapViewSync
+          mapRef={mapRef}
           onViewChange={(nextView) =>
             onViewChange?.({
               ...nextView,
