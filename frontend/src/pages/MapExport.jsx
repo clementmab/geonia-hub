@@ -83,21 +83,6 @@ function sortFeaturesByName(features) {
   });
 }
 
-function collectStyleText() {
-  const chunks = [];
-
-  for (const sheet of Array.from(document.styleSheets)) {
-    try {
-      const rules = Array.from(sheet.cssRules || []);
-      chunks.push(rules.map((rule) => rule.cssText).join('\n'));
-    } catch (error) {
-      // Ignore cross-origin stylesheets we cannot read.
-    }
-  }
-
-  return chunks.join('\n');
-}
-
 function loadImageFromUrl(url) {
   return new Promise((resolve, reject) => {
     const image = new Image();
