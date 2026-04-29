@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import L from 'leaflet';
 import { GeoJSON, MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { buildLayerSymbology } from '../utils/symbology';
@@ -61,6 +62,7 @@ const MapView = ({
   mapRef,
   initialView,
   onViewChange,
+  focusGeoJson,
   showTileLayerSelector = true,
 }) => {
   const [geoJsonLayers, setGeoJsonLayers] = useState({});
@@ -98,6 +100,22 @@ const MapView = ({
       map.setView(nextCenter, nextZoom, { animate: false });
     }
   }, [initialView]);
+
+  useEffect(() => {
+    const map = leafletMapRef.current;
+    if (!map || !focusGeoJson?.features?.length) {
+      return;
+    }
+
+    const bounds = L.geoJSON(focusGeoJson).getBounds();
+    if (bounds.isValid()) {
+      map.fitBounds(bounds, {
+        animate: false,
+        padding: [28, 28],
+        maxZoom: 14,
+      });
+    }
+  }, [focusGeoJson]);
 
   useEffect(() => {
     const nextLayers = {};

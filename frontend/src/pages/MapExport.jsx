@@ -1,73 +1,87 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import html2canvas from 'html2canvas';
 import { useNavigate } from 'react-router-dom';
 import ChartPanel from '../components/ChartPanel';
 import MapView, { congoCenter, congoZoom, defaultTileLayer } from '../components/MapView';
 import { buildLayerSymbology } from '../utils/symbology';
 import './MapExport.css';
 
-// État local pour la gestion des couches dans MapExport
-const initializeLayers = () => {
-  // Charger les données GeoJSON directement depuis les fichiers de données
-  // Au lieu de dépendre de sessionStorage depuis la page Map
+const EXPORT_LAYER_CATALOG = [
+  {
+    key: 'Departement_Congo',
+    name: 'Departements du Congo',
+    scope: 'National',
+    filePath: '/data/Departement_Congo.geojson',
+    color: '#0f6e56',
+  },
+  {
+    key: 'Districts_Congo',
+    name: 'Districts du Congo',
+    scope: 'National',
+    filePath: '/data/Districts_Congo.geojson',
+    color: '#f25f5c',
+  },
+  {
+    key: 'Arrondissements_Brazzaville',
+    name: 'Arrondissements de Brazzaville',
+    scope: 'Brazzaville',
+    filePath: '/data/Arrondissements_Brazzaville.geojson',
+    color: '#247ba0',
+  },
+  {
+    key: 'Arrondissements_Pointe_Noire',
+    name: 'Arrondissements de Pointe-Noire',
+    scope: 'Pointe-Noire',
+    filePath: '/data/Arrondissements_Pointe_Noire.geojson',
+    color: '#70c1b3',
+  },
+  {
+    key: 'Quartiers_kintele',
+    name: 'Quartiers de Kintele',
+    scope: 'Kintele',
+    filePath: '/data/Quartiers_kintele.geojson',
+    color: '#f7a072',
+  },
+];
+
+function createInitialLayers() {
+  return Object.fromEntries(
+    EXPORT_LAYER_CATALOG.map((layer) => [
+      layer.key,
+      {
+        name: layer.name,
+        scope: layer.scope,
+        filePath: layer.filePath,
+        visible: layer.key === 'Departement_Congo',
+        data: null,
+        styleMode: 'categorized',
+        styleField: 'name',
+        color: layer.color,
+        opacity: 0.72,
+        labelEnabled: true,
+        labelField: 'name',
+      },
+    ])
+  );
+}
+
+function createFeatureCollection(data, features) {
+  if (!data) {
+    return null;
+  }
+
   return {
-    congo_departements: {
-      name: 'Départements du Congo',
-      visible: true,
-      data: null, // Sera chargé depuis l'API
-      styleMode: 'classified',
-      styleField: 'name',
-      color: '#0F6E56',
-      opacity: 0.7,
-      labelEnabled: false,
-      labelField: 'name'
-    },
-    congo_districts: {
-      name: 'Districts du Congo',
-      visible: false,
-      data: null,
-      styleMode: 'classified',
-      styleField: 'name',
-      color: '#FF6B35',
-      opacity: 0.7,
-      labelEnabled: false,
-      labelField: 'name'
-    },
-    arrondissements_brazzaville: {
-      name: 'Arrondissements de Brazzaville',
-      visible: false,
-      data: null,
-      styleMode: 'classified',
-      styleField: 'name',
-      color: '#4ECDC4',
-      opacity: 0.7,
-      labelEnabled: false,
-      labelField: 'name'
-    },
-    arrondissements_pointe_noire: {
-      name: 'Arrondissements de Pointe-Noire',
-      visible: false,
-      data: null,
-      styleMode: 'classified',
-      styleField: 'name',
-      color: '#95E1D3',
-      opacity: 0.7,
-      labelEnabled: false,
-      labelField: 'name'
-    },
-    quartiers_kintele: {
-      name: 'Quartiers Kintélé',
-      visible: false,
-      data: null,
-      styleMode: 'classified',
-      styleField: 'name',
-      color: '#F38181',
-      opacity: 0.7,
-      labelEnabled: false,
-      labelField: 'name'
-    }
+    ...data,
+    features,
   };
-};
+}
+
+function sortFeaturesByName(features) {
+  return [...features].sort((a, b) => {
+    const left = String(a?.properties?.name || '');
+    const right = String(b?.properties?.name || '');
+    return left.localeCompare(right, 'fr', { sensitivity: 'base' });
+  });
+}
 
 function ExportLegend({ layers }) {
   const visibleLayers = Object.entries(layers).filter(([, layer]) => layer.visible && layer.data);
@@ -75,7 +89,7 @@ function ExportLegend({ layers }) {
   return (
     <section className="export-card">
       <div className="export-card__header">
-        <h3>Legende cartographique</h3>
+        <h3>Legende</h3>
       </div>
       <div className="export-legend">
         {visibleLayers.map(([layerKey, layer]) => {
@@ -93,9 +107,6 @@ function ExportLegend({ layers }) {
                     <span>{item.label}</span>
                   </div>
                 ))}
-                {symbology.legendItems.length > 12 && (
-                  <div className="export-legend__more">+ {symbology.legendItems.length - 12} autres classes</div>
-                )}
               </div>
             </div>
           );
@@ -105,86 +116,121 @@ function ExportLegend({ layers }) {
   );
 }
 
-function ExportSummary({ layers }) {
-  const visibleLayers = Object.values(layers).filter((layer) => layer.visible && layer.data);
-  const totalFeatures = visibleLayers.reduce((sum, layer) => sum + (layer.data?.features?.length || 0), 0);
-
+function ExportSummary({ scopeName, layerName, featureCount }) {
   return (
     <section className="export-card export-summary">
       <div>
-        <span className="export-summary__label">Couches visibles</span>
-        <strong>{visibleLayers.length}</strong>
+        <span className="export-summary__label">Niveau</span>
+        <strong>{layerName}</strong>
+      </div>
+      <div>
+        <span className="export-summary__label">Zone</span>
+        <strong>{scopeName}</strong>
       </div>
       <div>
         <span className="export-summary__label">Entites</span>
-        <strong>{totalFeatures}</strong>
-      </div>
-      <div>
-        <span className="export-summary__label">Cree le</span>
-        <strong>{new Date().toLocaleDateString('fr-FR')}</strong>
+        <strong>{featureCount}</strong>
       </div>
     </section>
   );
 }
 
-function StyleControls({ layers, onUpdateLayer }) {
+function ExportConfigurator({
+  layerOptions,
+  selectedLayerKey,
+  selectedFeatureName,
+  searchTerm,
+  featureOptions,
+  selectedLayer,
+  onLayerChange,
+  onFeatureChange,
+  onSearchChange,
+  onLayerStyleChange,
+}) {
   return (
     <section className="export-card">
       <div className="export-card__header">
-        <h3>Contrôles de style</h3>
+        <h3>Personnalisation</h3>
       </div>
-      <div className="style-controls">
-        {Object.entries(layers).map(([layerKey, layer]) => (
-          <div key={layerKey} className="style-control__group">
-            <h4>{layer.name}</h4>
-            
-            <div className="style-control__row">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={layer.visible}
-                  onChange={(e) => onUpdateLayer(layerKey, { visible: e.target.checked })}
-                />
-                Visible
-              </label>
-            </div>
-            
-            <div className="style-control__row">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={layer.labelEnabled}
-                  onChange={(e) => onUpdateLayer(layerKey, { labelEnabled: e.target.checked })}
-                />
-                Afficher les étiquettes
-              </label>
-            </div>
-            
-            <div className="style-control__row">
-              <label>Couleur:</label>
-              <input
-                type="color"
-                value={layer.color}
-                onChange={(e) => onUpdateLayer(layerKey, { color: e.target.value })}
-                className="color-input"
-              />
-            </div>
-            
-            <div className="style-control__row">
-              <label>Opacité:</label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={layer.opacity}
-                onChange={(e) => onUpdateLayer(layerKey, { opacity: parseFloat(e.target.value) })}
-                className="opacity-slider"
-              />
-              <span>{Math.round(layer.opacity * 100)}%</span>
-            </div>
-          </div>
-        ))}
+
+      <div className="export-configurator">
+        <div className="export-field">
+          <label htmlFor="export-layer-select">Selectionnez votre zone</label>
+          <select
+            id="export-layer-select"
+            value={selectedLayerKey}
+            onChange={(event) => onLayerChange(event.target.value)}
+          >
+            {layerOptions.map((option) => (
+              <option key={option.key} value={option.key}>
+                {option.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="export-field">
+          <label htmlFor="export-search-input">Recherche precise</label>
+          <input
+            id="export-search-input"
+            type="text"
+            value={searchTerm}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Ex: Brazzaville, Djiri, Lekoumou"
+          />
+        </div>
+
+        <div className="export-field">
+          <label htmlFor="export-feature-select">Zone precise</label>
+          <select
+            id="export-feature-select"
+            value={selectedFeatureName}
+            onChange={(event) => onFeatureChange(event.target.value)}
+          >
+            <option value="">Toute la zone selectionnee</option>
+            {featureOptions.map((featureName) => (
+              <option key={featureName} value={featureName}>
+                {featureName}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="export-field export-field--inline">
+          <label htmlFor="export-label-toggle" className="checkbox-line">
+            <input
+              id="export-label-toggle"
+              type="checkbox"
+              checked={selectedLayer.labelEnabled}
+              onChange={(event) => onLayerStyleChange(selectedLayerKey, 'labelEnabled', event.target.checked)}
+            />
+            Etiquettes visibles
+          </label>
+          <label htmlFor="export-opacity-slider" className="slider-line">
+            <span>Opacite</span>
+            <input
+              id="export-opacity-slider"
+              type="range"
+              min="0.2"
+              max="1"
+              step="0.05"
+              value={selectedLayer.opacity}
+              onChange={(event) => onLayerStyleChange(selectedLayerKey, 'opacity', Number(event.target.value))}
+            />
+            <strong>{Math.round(selectedLayer.opacity * 100)}%</strong>
+          </label>
+        </div>
+
+        <div className="export-field export-field--inline">
+          <label htmlFor="export-color-input">Couleur</label>
+          <input
+            id="export-color-input"
+            type="color"
+            value={selectedLayer.color}
+            onChange={(event) => onLayerStyleChange(selectedLayerKey, 'color', event.target.value)}
+            className="color-input"
+          />
+        </div>
       </div>
     </section>
   );
@@ -192,196 +238,166 @@ function StyleControls({ layers, onUpdateLayer }) {
 
 export default function MapExport() {
   const navigate = useNavigate();
-  const [isExporting, setIsExporting] = useState(false);
   const exportRef = useRef(null);
   const mapRef = useRef(null);
-  
-  // État autonome pour les couches (indépendant de la page Map)
-  const [layers, setLayers] = useState(initializeLayers());
+  const [layers, setLayers] = useState(() => createInitialLayers());
+  const [selectedLayerKey, setSelectedLayerKey] = useState('Departement_Congo');
+  const [selectedFeatureName, setSelectedFeatureName] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [isPrinting, setIsPrinting] = useState(false);
   const [mapView, setMapView] = useState({
     center: congoCenter,
     zoom: congoZoom,
-    tileLayer: defaultTileLayer
+    tileLayer: defaultTileLayer,
   });
   const [activeLayersData, setActiveLayersData] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState(null);
-    
-  // Charger les données GeoJSON directement
+
   useEffect(() => {
     const loadGeoData = async () => {
+      setIsLoading(true);
+      setLoadError('');
+
       try {
-        console.log('🚀 Début du chargement des données GeoJSON...');
-        setIsLoading(true);
-        setLoadError(null);
-        
-        // Configuration des fichiers à charger
-        const layerFiles = {
-          congo_departements: '/data/Departement_Congo.geojson',
-          congo_districts: '/data/Districts_Congo.geojson',
-          arrondissements_brazzaville: '/data/Arrondissements_Brazzaville.geojson',
-          arrondissements_pointe_noire: '/data/Arrondissements_Pointe_Noire.geojson',
-          quartiers_kintele: '/data/Quartiers_kintele.geojson'
-        };
-        
-        const loadedLayers = {};
-        const allActiveData = [];
-        
-        // Charger chaque fichier GeoJSON
-        for (const [layerKey, filePath] of Object.entries(layerFiles)) {
-          try {
-            console.log(`📁 Chargement de ${filePath}...`);
-            const response = await fetch(filePath);
-            
+        const responses = await Promise.all(
+          EXPORT_LAYER_CATALOG.map(async (layer) => {
+            const response = await fetch(layer.filePath);
             if (!response.ok) {
-              console.warn(`❌ Impossible de charger ${filePath}: ${response.status}`);
-              continue;
+              throw new Error(`Chargement impossible pour ${layer.name}`);
             }
-            
-            const geoData = await response.json();
-            
-            if (!geoData || !geoData.features) {
-              console.warn(`❌ Fichier GeoJSON invalide: ${filePath}`);
-              continue;
-            }
-            
-            console.log(`✅ ${filePath} chargé avec ${geoData.features.length} features`);
-            loadedLayers[layerKey] = geoData;
-            
-            // Ajouter aux données actives pour les diagrammes
-            const layerData = geoData.features.map(feature => ({
-              name: feature.properties.name || 'Sans nom',
-              pop: feature.properties.pop || 0,
-              area: feature.properties.area || 0,
-              layerName: layers[layerKey]?.name || layerKey,
-              layerKey
-            }));
-            allActiveData.push(...layerData);
-            
-          } catch (error) {
-            console.warn(`Erreur de chargement de ${filePath}:`, error);
-          }
-        }
-        
-        // Mettre à jour toutes les couches
-        setLayers(prev => {
-          const updated = { ...prev };
-          Object.keys(loadedLayers).forEach(layerKey => {
-            updated[layerKey] = {
-              ...prev[layerKey],
-              data: loadedLayers[layerKey]
+
+            const data = await response.json();
+            return [layer.key, data];
+          })
+        );
+
+        const loadedData = Object.fromEntries(responses);
+
+        setLayers((prev) => {
+          const next = { ...prev };
+          Object.entries(loadedData).forEach(([layerKey, data]) => {
+            next[layerKey] = {
+              ...next[layerKey],
+              data,
             };
           });
-          return updated;
+          return next;
         });
-        
-        console.log(`📊 Données actives préparées: ${allActiveData.length} entités`);
-        setActiveLayersData(allActiveData);
-        
       } catch (error) {
-        console.error('❌ Erreur de chargement des données:', error);
-        setLoadError(error.message);
+        setLoadError(error.message || 'Erreur de chargement');
       } finally {
-        console.log('🏁 Fin du chargement, setIsLoading(false)');
         setIsLoading(false);
       }
     };
-    
+
     loadGeoData();
-  }, [layers]);
+  }, []);
 
   useEffect(() => {
     const handleAfterPrint = () => {
       document.body.classList.remove('map-export-printing');
-      setIsExporting(false);
+      setIsPrinting(false);
     };
 
     window.addEventListener('afterprint', handleAfterPrint);
     return () => window.removeEventListener('afterprint', handleAfterPrint);
   }, []);
 
-  // Gestionnaire pour mettre à jour les couches
-  const updateLayer = (layerKey, updates) => {
-    setLayers(prev => ({
-      ...prev,
-      [layerKey]: {
-        ...prev[layerKey],
-        ...updates
-      }
-    }));
-  };
-  
-  // Gestionnaire pour mettre à jour la vue de la carte
-  const updateMapView = (newView) => {
-    setMapView(prev => ({ ...prev, ...newView }));
-  };
-  
-  // Couches visibles
+  const selectedLayer = layers[selectedLayerKey] || layers.Departement_Congo;
+  const selectedLayerData = selectedLayer?.data;
+  const allFeatureNames = useMemo(
+    () => sortFeaturesByName(selectedLayerData?.features || []).map((feature) => feature.properties?.name).filter(Boolean),
+    [selectedLayerData]
+  );
+
+  const filteredFeatureNames = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    if (!normalizedSearch) {
+      return allFeatureNames;
+    }
+
+    return allFeatureNames.filter((name) => name.toLowerCase().includes(normalizedSearch));
+  }, [allFeatureNames, searchTerm]);
+
+  useEffect(() => {
+    if (selectedFeatureName && !filteredFeatureNames.includes(selectedFeatureName)) {
+      setSelectedFeatureName('');
+    }
+  }, [filteredFeatureNames, selectedFeatureName]);
+
+  const focusedFeatures = useMemo(() => {
+    const features = selectedLayerData?.features || [];
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    let nextFeatures = features;
+
+    if (normalizedSearch) {
+      nextFeatures = nextFeatures.filter((feature) =>
+        String(feature?.properties?.name || '').toLowerCase().includes(normalizedSearch)
+      );
+    }
+
+    if (selectedFeatureName) {
+      nextFeatures = nextFeatures.filter((feature) => feature?.properties?.name === selectedFeatureName);
+    }
+
+    return nextFeatures;
+  }, [searchTerm, selectedFeatureName, selectedLayerData]);
+
   const visibleLayers = useMemo(() => {
-    return Object.fromEntries(
-      Object.entries(layers).filter(([, layer]) => layer.visible && layer.data)
-    );
-  }, [layers]);
+    if (!selectedLayerData) {
+      return {};
+    }
+
+    const data = createFeatureCollection(selectedLayerData, focusedFeatures);
+
+    return {
+      [selectedLayerKey]: {
+        ...selectedLayer,
+        visible: true,
+        data,
+      },
+    };
+  }, [focusedFeatures, selectedLayer, selectedLayerData, selectedLayerKey]);
+
+  const focusGeoJson = useMemo(() => {
+    const layer = visibleLayers[selectedLayerKey];
+    return layer?.data || null;
+  }, [selectedLayerKey, visibleLayers]);
+
+  const scopeName = selectedFeatureName || searchTerm || selectedLayer.scope;
+  const featureCount = focusedFeatures.length;
 
   useEffect(() => {
     if (mapRef.current) {
       setTimeout(() => {
         mapRef.current?.invalidateSize();
-        mapRef.current?.setView(
-          mapView.center || congoCenter,
-          typeof mapView.zoom === 'number' ? mapView.zoom : congoZoom,
-          { animate: false }
-        );
-      }, 200);
+      }, 120);
     }
-  }, [visibleLayers, mapView]);
+  }, [focusGeoJson, mapView]);
 
-  const exportAsPng = async () => {
-    if (!exportRef.current || isExporting) {
-      return;
-    }
+  const handleLayerChange = (layerKey) => {
+    setSelectedLayerKey(layerKey);
+    setSelectedFeatureName('');
+    setSearchTerm('');
+  };
 
-    setIsExporting(true);
-
-    try {
-      mapRef.current?.invalidateSize();
-      mapRef.current?.setView(
-        mapView.center || congoCenter,
-        typeof mapView.zoom === 'number' ? mapView.zoom : congoZoom,
-        { animate: false }
-      );
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      const canvas = await html2canvas(exportRef.current, {
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: '#ffffff',
-        scale: 2,
-        logging: false,
-      });
-
-      const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/png');
-      link.download = `geonia-export-${new Date().toISOString().slice(0, 10)}.png`;
-      link.click();
-    } catch (error) {
-      console.error('Erreur export PNG:', error);
-      alert("Impossible d'exporter en PNG pour le moment.");
-    } finally {
-      setIsExporting(false);
-    }
+  const handleLayerStyleChange = (layerKey, property, value) => {
+    setLayers((prev) => ({
+      ...prev,
+      [layerKey]: {
+        ...prev[layerKey],
+        [property]: value,
+      },
+    }));
   };
 
   const exportAsPdf = async () => {
-    setIsExporting(true);
-    mapRef.current?.invalidateSize();
-    mapRef.current?.setView(
-      mapView.center || congoCenter,
-      typeof mapView.zoom === 'number' ? mapView.zoom : congoZoom,
-      { animate: false }
-    );
+    setIsPrinting(true);
     document.body.classList.add('map-export-printing');
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    mapRef.current?.invalidateSize();
+    await new Promise((resolve) => setTimeout(resolve, 250));
     window.print();
   };
 
@@ -389,8 +405,8 @@ export default function MapExport() {
     return (
       <div className="map-export-page map-export-page--empty">
         <div className="export-card export-empty">
-          <h2>Chargement des données...</h2>
-          <p>Veuillez patienter pendant le chargement des couches géographiques.</p>
+          <h2>Chargement des donnees cartographiques...</h2>
+          <p>La page de personnalisation se prepare.</p>
         </div>
       </div>
     );
@@ -400,43 +416,29 @@ export default function MapExport() {
     return (
       <div className="map-export-page map-export-page--empty">
         <div className="export-card export-empty">
-          <h2>Erreur de chargement</h2>
-          <p>Impossible de charger les données géographiques : {loadError}</p>
+          <h2>Impossible d'ouvrir l'export</h2>
+          <p>{loadError}</p>
           <button className="export-action export-action--primary" onClick={() => window.location.reload()}>
-            Réessayer
+            Recharger
           </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!Object.keys(visibleLayers).length) {
-    return (
-      <div className="map-export-page map-export-page--empty">
-        <div className="export-card export-empty">
-          <h2>Aucune donnée disponible</h2>
-          <p>Les couches géographiques ne contiennent aucune donnée à afficher.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`map-export-page${isExporting ? ' map-export-page--busy' : ''}`}>
+    <div className={`map-export-page${isPrinting ? ' map-export-page--busy' : ''}`}>
       <div className="map-export-toolbar">
         <div>
-          <h1>Export cartographique</h1>
-          <p>Page dediee pour produire un rendu complet avec carte, legende et diagrammes.</p>
+          <h1>Export cartographique autonome</h1>
+          <p>Choisis une zone, affine precisement, puis laisse la carte se cadrer automatiquement.</p>
         </div>
         <div className="map-export-toolbar__actions">
           <button className="export-action" onClick={() => navigate('/map')}>
-            Retour
+            Retour carte
           </button>
-          <button className="export-action" onClick={exportAsPng} disabled={isExporting}>
-            {isExporting ? 'Traitement...' : 'Exporter PNG'}
-          </button>
-          <button className="export-action export-action--primary" onClick={exportAsPdf} disabled={isExporting}>
-            Exporter PDF
+          <button className="export-action export-action--primary" onClick={exportAsPdf} disabled={!featureCount || isPrinting}>
+            {isPrinting ? 'Preparation...' : 'Exporter PDF'}
           </button>
         </div>
       </div>
@@ -444,15 +446,32 @@ export default function MapExport() {
       <div className="map-export-sheet" ref={exportRef}>
         <header className="map-export-sheet__header">
           <div>
-            <h2>Carte thematique du Congo</h2>
-            <p>Composition generee depuis GeoNia Data Hub - Mode autonome</p>
+            <h2>Composition dynamique</h2>
+            <p>Le cadrage suit la zone selectionnee comme une navigation guidee.</p>
           </div>
           <div className="map-export-sheet__meta">
             <span>{new Date().toLocaleString('fr-FR')}</span>
           </div>
         </header>
 
-        <ExportSummary layers={visibleLayers} />
+        <ExportConfigurator
+          layerOptions={EXPORT_LAYER_CATALOG}
+          selectedLayerKey={selectedLayerKey}
+          selectedFeatureName={selectedFeatureName}
+          searchTerm={searchTerm}
+          featureOptions={filteredFeatureNames}
+          selectedLayer={selectedLayer}
+          onLayerChange={handleLayerChange}
+          onFeatureChange={setSelectedFeatureName}
+          onSearchChange={setSearchTerm}
+          onLayerStyleChange={handleLayerStyleChange}
+        />
+
+        <ExportSummary
+          scopeName={scopeName}
+          layerName={selectedLayer.name}
+          featureCount={featureCount}
+        />
 
         <section className="map-export-grid">
           <div className="export-card export-card--map">
@@ -462,18 +481,17 @@ export default function MapExport() {
               updateActiveLayersData={setActiveLayersData}
               mapRef={mapRef}
               initialView={mapView}
+              onViewChange={setMapView}
+              focusGeoJson={focusGeoJson}
               showTileLayerSelector={true}
-              onMapViewChange={updateMapView}
-              onLayerUpdate={updateLayer}
             />
           </div>
 
           <div className="map-export-side">
-            <StyleControls layers={layers} onUpdateLayer={updateLayer} />
             <ExportLegend layers={visibleLayers} />
             <section className="export-card">
               <div className="export-card__header">
-                <h3>Diagrammes</h3>
+                <h3>Lecture rapide</h3>
               </div>
               <ChartPanel layersData={activeLayersData} />
             </section>

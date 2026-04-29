@@ -77,25 +77,7 @@ const Map = () => {
   };
 
   const exportMap = () => {
-    const visibleLayers = Object.fromEntries(
-      Object.entries(layers).filter(([, layer]) => layer.visible && layer.data)
-    );
-
-    if (!Object.keys(visibleLayers).length) {
-      alert("Active au moins une couche avant de preparer l'export.");
-      return;
-    }
-
-    const exportId = `map-export-${Date.now()}`;
-    const exportPayload = {
-      createdAt: new Date().toISOString(),
-      layers,
-      activeLayersData,
-      mapView,
-    };
-
-    sessionStorage.setItem(exportId, JSON.stringify(exportPayload));
-    navigate(`/map/export?id=${encodeURIComponent(exportId)}`);
+    navigate('/map/export');
   };
 
   return (
