@@ -187,17 +187,12 @@ async function renderLeafletMapSnapshot(mapElement, width, height) {
 
 async function exportCompositionAsPng({
   fileName,
-  title,
-  subtitle,
-  levelName,
-  scopeName,
-  featureCount,
   legendLayers,
   mapElement,
   chartCanvas,
 }) {
-  const width = 1600;
-  const height = 920;
+  const width = 1500;
+  const height = 860;
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -210,85 +205,58 @@ async function exportCompositionAsPng({
   context.fillStyle = '#f4f8f7';
   context.fillRect(0, 0, width, height);
 
-  drawRoundedRect(context, 28, 24, width - 56, height - 48, 24, '#ffffff');
-  drawRoundedRect(context, 28, 24, width - 56, 96, 24, '#16324a');
-  context.fillStyle = '#ffffff';
-  context.font = '700 34px Arial';
-  context.fillText(title, 54, 64);
-  context.font = '400 18px Arial';
-  context.fillStyle = 'rgba(255,255,255,0.86)';
-  context.fillText(subtitle, 54, 94);
-
-  const summaryTop = 138;
-  const summaryWidth = 250;
-  const summaryGap = 16;
-  const summaryItems = [
-    ['Niveau', levelName],
-    ['Zone', scopeName],
-    ['Entites', String(featureCount)],
-  ];
-
-  summaryItems.forEach(([label, value], index) => {
-    const x = 40 + index * (summaryWidth + summaryGap);
-    drawRoundedRect(context, x, summaryTop, summaryWidth, 76, 16, '#f6faf9', '#dbe6eb');
-    context.fillStyle = '#5d6c79';
-    context.font = '700 14px Arial';
-    context.fillText(label.toUpperCase(), x + 18, summaryTop + 24);
-    context.fillStyle = '#16324a';
-    context.font = '700 23px Arial';
-    context.fillText(value, x + 18, summaryTop + 54);
-  });
+  drawRoundedRect(context, 24, 20, width - 48, height - 40, 24, '#ffffff');
 
   const mapX = 40;
-  const mapY = 232;
+  const mapY = 38;
   const mapWidth = 980;
-  const mapHeight = 620;
+  const mapHeight = 590;
   drawRoundedRect(context, mapX, mapY, mapWidth, mapHeight, 18, '#dce8ee', '#dbe6eb');
 
   const mapCanvas = await renderLeafletMapSnapshot(mapElement, mapWidth, mapHeight);
   context.drawImage(mapCanvas, mapX, mapY, mapWidth, mapHeight);
 
   const sideX = 1040;
-  const sideWidth = 520;
-  drawRoundedRect(context, sideX, mapY, sideWidth, 330, 18, '#ffffff', '#dbe6eb');
+  const sideWidth = 420;
+  drawRoundedRect(context, sideX, mapY, sideWidth, 306, 18, '#ffffff', '#dbe6eb');
   context.fillStyle = '#16324a';
-  context.font = '700 24px Arial';
-  context.fillText('Legende', sideX + 20, mapY + 34);
+  context.font = '700 22px Arial';
+  context.fillText('Legende', sideX + 20, mapY + 32);
 
-  let legendY = mapY + 68;
+  let legendY = mapY + 62;
   Object.values(legendLayers).forEach((layer) => {
     const symbology = buildLayerSymbology(layer);
     context.fillStyle = '#16324a';
-    context.font = '700 18px Arial';
+    context.font = '700 16px Arial';
     context.fillText(layer.name, sideX + 20, legendY);
-    legendY += 18;
+    legendY += 16;
     context.fillStyle = '#5d6c79';
-    context.font = '400 13px Arial';
+    context.font = '400 12px Arial';
     context.fillText(layer.styleMode === 'single' ? 'Couleur unique' : `${layer.styleMode} - ${symbology.field || 'champ'}`, sideX + 20, legendY);
-    legendY += 18;
+    legendY += 16;
 
     symbology.legendItems.slice(0, 10).forEach((item) => {
       drawRoundedRect(context, sideX + 20, legendY - 10, 14, 14, 3, item.color, 'rgba(0,0,0,0.08)');
       context.fillStyle = '#16324a';
-      context.font = '400 13px Arial';
+      context.font = '400 12px Arial';
       context.fillText(String(item.label), sideX + 42, legendY + 1);
-      legendY += 22;
+      legendY += 20;
     });
 
-    legendY += 8;
+    legendY += 6;
   });
 
-  drawRoundedRect(context, sideX, mapY + 348, sideWidth, 504, 18, '#ffffff', '#dbe6eb');
+  drawRoundedRect(context, sideX, mapY + 324, sideWidth, 484, 18, '#ffffff', '#dbe6eb');
   context.fillStyle = '#16324a';
-  context.font = '700 24px Arial';
-  context.fillText('Diagramme', sideX + 20, mapY + 382);
+  context.font = '700 22px Arial';
+  context.fillText('Diagramme', sideX + 20, mapY + 358);
 
   if (chartCanvas) {
-    context.drawImage(chartCanvas, sideX + 18, mapY + 398, sideWidth - 36, 430);
+    context.drawImage(chartCanvas, sideX + 18, mapY + 372, sideWidth - 36, 410);
   } else {
     context.fillStyle = '#5d6c79';
-    context.font = '400 18px Arial';
-    context.fillText('Aucune visualisation disponible', sideX + 20, mapY + 430);
+    context.font = '400 16px Arial';
+    context.fillText('Aucune visualisation disponible', sideX + 20, mapY + 408);
   }
 
   const link = document.createElement('a');
@@ -301,7 +269,7 @@ function ExportLegend({ layers }) {
   const visibleLayers = Object.entries(layers).filter(([, layer]) => layer.visible && layer.data);
 
   return (
-    <section className="export-card export-card--configurator">
+    <section className="export-card">
       <div className="export-card__header">
         <h3>Legende</h3>
       </div>
@@ -362,7 +330,7 @@ function ExportConfigurator({
   onLayerStyleChange,
 }) {
   return (
-    <section className="export-card">
+    <section className="export-card export-card--configurator">
       <div className="export-card__header">
         <h3>Personnalisation</h3>
       </div>
@@ -623,11 +591,6 @@ export default function MapExport() {
       const chartCanvas = chartRef.current?.querySelector('canvas') || null;
       await exportCompositionAsPng({
         fileName: `geonia-export-${selectedLayerKey.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.png`,
-        title: 'Export cartographique GeoNia',
-        subtitle: 'Composition optimisee pour partage rapide',
-        levelName: selectedLayer.name,
-        scopeName,
-        featureCount,
         legendLayers: visibleLayers,
         mapElement,
         chartCanvas,

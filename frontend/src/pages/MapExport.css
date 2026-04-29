@@ -326,6 +326,11 @@ body.map-export-printing .map-export-sheet {
 }
 
 @media print {
+  .map-export-sheet__header,
+  .export-summary {
+    display: none;
+  }
+
   .map-export-sheet__meta {
     display: none;
   }
@@ -353,8 +358,8 @@ body.map-export-printing .map-export-sheet {
   }
 
   .export-card--map {
-    min-height: 430px;
-    height: 430px;
+    min-height: 390px;
+    height: 390px;
   }
 
   .map-export-sheet__header p {
@@ -388,12 +393,12 @@ body.map-export-printing .map-export-sheet {
   }
 
   .export-card--chart {
-    max-height: 170px;
+    max-height: 160px;
     padding: 8px;
   }
 
   .export-card--chart .chart-panel {
-    padding: 0.5rem;
+    padding: 0.35rem;
     box-shadow: none;
   }
 
@@ -403,10 +408,10 @@ body.map-export-printing .map-export-sheet {
   }
 
   .export-card--chart .chart-container {
-    min-height: 120px;
-    height: 120px !important;
+    min-height: 108px;
+    height: 108px !important;
     margin-bottom: 0;
-    padding: 0.35rem;
+    padding: 0.2rem;
   }
 }
 

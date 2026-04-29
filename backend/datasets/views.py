@@ -5,11 +5,30 @@ from rest_framework.permissions import (
     IsAuthenticatedOrReadOnly, IsAdminUser, AllowAny, IsAuthenticated
 )
 from django_filters.rest_framework import DjangoFilterBackend
+from django_filters import rest_framework as django_filters
 from .models import Dataset, Category, Department
 from .serializers import (
     DatasetListSerializer, DatasetDetailSerializer,
     DatasetCreateSerializer, CategorySerializer, DepartmentSerializer
 )
+
+
+class NumberInFilter(django_filters.BaseInFilter, django_filters.NumberFilter):
+    pass
+
+
+class CharInFilter(django_filters.BaseInFilter, django_filters.CharFilter):
+    pass
+
+
+class DatasetFilterSet(django_filters.FilterSet):
+    category = NumberInFilter(field_name='category_id', lookup_expr='in')
+    department = NumberInFilter(field_name='department_id', lookup_expr='in')
+    format = CharInFilter(field_name='format', lookup_expr='in')
+
+    class Meta:
+        model = Dataset
+        fields = ['category', 'department', 'format', 'licence', 'status']
 
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -27,7 +46,7 @@ class DepartmentViewSet(viewsets.ReadOnlyModelViewSet):
 class DatasetViewSet(viewsets.ModelViewSet):
     filter_backends  = [DjangoFilterBackend, filters.SearchFilter,
                         filters.OrderingFilter]
-    filterset_fields = ['category', 'department', 'format', 'licence', 'status']
+    filterset_class = DatasetFilterSet
     search_fields    = ['title', 'description']
     ordering_fields  = ['created_at', 'downloads', 'file_size_mb']
 
