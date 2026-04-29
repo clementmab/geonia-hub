@@ -167,6 +167,10 @@ const MapView = ({
 
   const onEachFeature = (layerKey) => (feature, leafletLayer) => {
     const layerConfig = layers[layerKey];
+    if (!layerConfig) {
+      return;
+    }
+
     const symbology = buildLayerSymbology(layerConfig);
     const labelField = layerConfig.labelField || 'name';
     const labelValue = feature?.properties?.[labelField];

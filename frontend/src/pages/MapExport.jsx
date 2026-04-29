@@ -83,6 +83,85 @@ function sortFeaturesByName(features) {
   });
 }
 
+function collectStyleText() {
+  const chunks = [];
+
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      const rules = Array.from(sheet.cssRules || []);
+      chunks.push(rules.map((rule) => rule.cssText).join('\n'));
+    } catch (error) {
+      // Ignore cross-origin stylesheets we cannot read.
+    }
+  }
+
+  return chunks.join('\n');
+}
+
+async function exportNodeAsPng(node, fileName) {
+  if (!node) {
+    throw new Error('Zone exportable introuvable');
+  }
+
+  const rect = node.getBoundingClientRect();
+  const clone = node.cloneNode(true);
+  const serializedStyles = collectStyleText();
+
+  clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  clone.style.width = `${Math.ceil(rect.width)}px`;
+  clone.style.height = `${Math.ceil(rect.height)}px`;
+  clone.style.margin = '0';
+
+  const wrapper = document.createElement('div');
+  wrapper.appendChild(clone);
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(rect.width)}" height="${Math.ceil(rect.height)}">
+      <foreignObject width="100%" height="100%">
+        <div xmlns="http://www.w3.org/1999/xhtml">
+          <style>${serializedStyles}</style>
+          ${wrapper.innerHTML}
+        </div>
+      </foreignObject>
+    </svg>
+  `;
+
+  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+
+  try {
+    const image = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Impossible de generer l'image exportee"));
+      img.src = url;
+    });
+
+    const canvas = document.createElement('canvas');
+    const scale = Math.max(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.ceil(rect.width * scale);
+    canvas.height = Math.ceil(rect.height * scale);
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Contexte canvas indisponible');
+    }
+
+    context.scale(scale, scale);
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, rect.width, rect.height);
+    context.drawImage(image, 0, 0, rect.width, rect.height);
+
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL('image/png');
+    link.download = fileName;
+    link.click();
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 function ExportLegend({ layers }) {
   const visibleLayers = Object.entries(layers).filter(([, layer]) => layer.visible && layer.data);
 
@@ -247,6 +326,7 @@ export default function MapExport() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isExportingImage, setIsExportingImage] = useState(false);
   const [mapView, setMapView] = useState({
     center: congoCenter,
     zoom: congoZoom,
@@ -393,6 +473,27 @@ export default function MapExport() {
     }));
   };
 
+  const exportAsImage = async () => {
+    if (isExportingImage || !featureCount) {
+      return;
+    }
+
+    setIsExportingImage(true);
+
+    try {
+      mapRef.current?.invalidateSize();
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      await exportNodeAsPng(
+        exportRef.current,
+        `geonia-export-${selectedLayerKey.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.png`
+      );
+    } catch (error) {
+      alert(error.message || "Impossible d'exporter l'image pour le moment.");
+    } finally {
+      setIsExportingImage(false);
+    }
+  };
+
   const exportAsPdf = async () => {
     setIsPrinting(true);
     document.body.classList.add('map-export-printing');
@@ -437,6 +538,9 @@ export default function MapExport() {
           <button className="export-action" onClick={() => navigate('/map')}>
             Retour carte
           </button>
+          <button className="export-action" onClick={exportAsImage} disabled={!featureCount || isExportingImage || isPrinting}>
+            {isExportingImage ? 'Preparation image...' : 'Exporter image'}
+          </button>
           <button className="export-action export-action--primary" onClick={exportAsPdf} disabled={!featureCount || isPrinting}>
             {isPrinting ? 'Preparation...' : 'Exporter PDF'}
           </button>
@@ -476,6 +580,7 @@ export default function MapExport() {
         <section className="map-export-grid">
           <div className="export-card export-card--map">
             <MapView
+              key={`export-map-${selectedLayerKey}`}
               layers={visibleLayers}
               onFeatureClick={() => {}}
               updateActiveLayersData={setActiveLayersData}
@@ -489,7 +594,7 @@ export default function MapExport() {
 
           <div className="map-export-side">
             <ExportLegend layers={visibleLayers} />
-            <section className="export-card">
+            <section className="export-card export-card--chart">
               <div className="export-card__header">
                 <h3>Lecture rapide</h3>
               </div>
